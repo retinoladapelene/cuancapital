@@ -27,6 +27,11 @@ Route::get('/cashbook', function () {
     return view('dashboard.cashbook');
 })->name('cashbook');
 
+// Business Manager — Local-First (all data in IndexedDB, server only serves shell)
+Route::get('/business-manager', function () {
+    return view('dashboard.business');
+})->name('business');
+
 Route::get('/login', function () {
     return redirect('/?auth_action=login');
 })->name('login');

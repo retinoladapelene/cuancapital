@@ -1789,6 +1789,144 @@
                         </div>
                     </div>
 
+                    {{-- ── Business Manager Card ──────────────────────────────────────────── --}}
+                    <div class="relative rounded-3xl overflow-hidden w-full mx-auto group/business transition-all duration-500
+                        bg-white dark:bg-slate-900/[0.03]
+                        backdrop-blur-2xl
+                        border border-slate-200 dark:border-white/5
+                        shadow-xl dark:shadow-[0_8px_40px_rgba(79,70,229,0.12),inset_0_1px_0_rgba(255,255,255,0.08)]
+                        hover:shadow-2xl dark:hover:shadow-[0_12px_60px_rgba(79,70,229,0.25),inset_0_1px_0_rgba(255,255,255,0.12)]
+                        hover:border-indigo-400/50 dark:hover:border-indigo-500/25
+                        hover:-translate-y-1">
+
+                        {{-- Grid texture --}}
+                        <div class="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]" style="background-image: linear-gradient(to right, #4f46e5 1px, transparent 1px), linear-gradient(to bottom, #4f46e5 1px, transparent 1px); background-size: 40px 40px;"></div>
+                        {{-- Ambient orbs --}}
+                        <div class="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-indigo-400/20 dark:bg-indigo-500/10 blur-3xl pointer-events-none group-hover/business:bg-indigo-400/30 dark:group-hover/business:bg-indigo-500/20 transition-colors duration-700"></div>
+                        <div class="absolute -bottom-16 -left-16 w-56 h-56 rounded-full bg-blue-400/15 dark:bg-blue-500/10 blur-3xl pointer-events-none group-hover/business:bg-blue-400/25 dark:group-hover/business:bg-blue-500/20 transition-colors duration-700"></div>
+                        {{-- Top highlight --}}
+                        <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/40 dark:via-indigo-400/50 to-transparent"></div>
+
+                        <div class="relative p-6 sm:p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 md:gap-10">
+                            
+                            {{-- Left: Graphic panel --}}
+                            <div class="md:w-1/2 relative order-2 md:order-1 w-full">
+                                {{-- Floating glow blobs --}}
+                                <div class="absolute -top-6 -right-6 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl animate-pulse"></div>
+                                <div class="absolute -bottom-6 -left-6 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl animate-pulse" style="animation-delay: 1.2s;"></div>
+
+                                <div class="relative rounded-2xl overflow-hidden border border-indigo-700/30 dark:border-indigo-500/20 shadow-2xl aspect-video bg-slate-900 transform group-hover/business:scale-[1.02] transition-transform duration-500">
+                                    {{-- ERP/POS Dashboard Graphic --}}
+                                    <div class="absolute inset-0 p-5 flex flex-col gap-3">
+                                        {{-- Top bar mock --}}
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex gap-2 items-center">
+                                                <div class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></div>
+                                                <div class="h-2 w-24 bg-slate-700 rounded-full"></div>
+                                            </div>
+                                            <div class="flex gap-1.5">
+                                                <div class="h-3 w-3 bg-slate-700 rounded-full"></div>
+                                                <div class="h-3 w-3 bg-slate-700 rounded-full"></div>
+                                            </div>
+                                        </div>
+                                        {{-- Grid layout mock --}}
+                                        <div class="flex gap-3 h-full">
+                                            {{-- Sidebar mock --}}
+                                            <div class="w-1/4 bg-slate-800/60 border border-slate-700/30 rounded-lg p-2.5 flex flex-col gap-2">
+                                                <div class="h-2 w-full bg-indigo-500/40 rounded-full mb-1"></div>
+                                                <div class="h-1.5 w-3/4 bg-slate-600 rounded-full"></div>
+                                                <div class="h-1.5 w-5/6 bg-slate-600 rounded-full"></div>
+                                                <div class="h-1.5 w-4/5 bg-slate-600 rounded-full"></div>
+                                                <div class="mt-auto h-6 w-full bg-indigo-500/80 rounded flex items-center justify-center">
+                                                    <div class="h-1.5 w-8 bg-white/50 rounded-full"></div>
+                                                </div>
+                                            </div>
+                                            {{-- Main content mock --}}
+                                            <div class="flex-1 flex flex-col gap-2">
+                                                {{-- Stats Row --}}
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div class="rounded-lg bg-indigo-900/40 border border-indigo-700/30 p-2">
+                                                        <div class="h-1 w-10 bg-slate-500 rounded mb-1"></div>
+                                                        <div class="h-2 w-16 bg-indigo-400/80 rounded font-mono"></div>
+                                                    </div>
+                                                    <div class="rounded-lg bg-slate-800/60 border border-slate-700/30 p-2">
+                                                        <div class="h-1 w-10 bg-slate-500 rounded mb-1"></div>
+                                                        <div class="h-2 w-12 bg-blue-400/60 rounded font-mono"></div>
+                                                    </div>
+                                                </div>
+                                                {{-- Content block --}}
+                                                <div class="flex-1 rounded-lg bg-slate-800/40 border border-slate-700/20 p-2">
+                                                    <div class="flex justify-between items-center mb-2">
+                                                        <div class="h-1.5 w-16 bg-slate-600 rounded"></div>
+                                                        <div class="h-4 w-12 bg-indigo-500/30 rounded-full"></div>
+                                                    </div>
+                                                    <div class="space-y-1.5">
+                                                        <div class="flex justify-between items-center p-1.5 bg-slate-900/50 rounded">
+                                                            <div class="flex gap-1.5 items-center"><div class="w-3 h-3 bg-slate-700 rounded-sm"></div><div class="h-1 w-12 bg-slate-500"></div></div>
+                                                            <div class="h-1 w-8 bg-indigo-400/70"></div>
+                                                        </div>
+                                                        <div class="flex justify-between items-center p-1.5 bg-slate-900/50 rounded">
+                                                            <div class="flex gap-1.5 items-center"><div class="w-3 h-3 bg-slate-700 rounded-sm"></div><div class="h-1 w-10 bg-slate-500"></div></div>
+                                                            <div class="h-1 w-8 bg-blue-400/70"></div>
+                                                        </div>
+                                                        <div class="flex justify-between items-center p-1.5 bg-slate-900/50 rounded">
+                                                            <div class="flex gap-1.5 items-center"><div class="w-3 h-3 bg-slate-700 rounded-sm"></div><div class="h-1 w-14 bg-slate-500"></div></div>
+                                                            <div class="h-1 w-10 bg-indigo-400/70"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Overlay badge --}}
+                                    <div class="absolute top-4 left-4 px-3 py-1 bg-indigo-500/20 backdrop-blur-sm border border-indigo-500/50 rounded-lg flex items-center gap-2">
+                                        <i class="fas fa-store text-indigo-400 text-xs"></i>
+                                        <span class="text-[10px] font-black text-white uppercase tracking-widest">Business OS</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Right: Copy and CTA --}}
+                            <div class="md:w-1/2 flex-shrink-0 space-y-5 order-1 md:order-2 w-full">
+                                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 text-xs font-bold tracking-widest">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                                    <span class="uppercase">Sleek & Fast</span>
+                                </div>
+
+                                <h2 class="text-3xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight">
+                                    Kelola Bisnismu<br>Kurang dari <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-blue-400">3 Detik.</span>
+                                </h2>
+
+                                <p class="text-slate-600 dark:text-slate-300 leading-relaxed text-sm md:text-base font-medium">
+                                    Ucapkan selamat tinggal pada aplikasi kasir yang lambat dan ribet. <span class="font-bold text-slate-900 dark:text-white">Business Manager</span> hadir dengan teknologi Local-First. Super cepat, bisa offline, dan khusus didesain untuk UMKM.
+                                </p>
+
+                                <ul class="space-y-3 pt-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
+                                    <li class="flex items-start gap-3"><i class="fas fa-check-circle text-indigo-600 dark:text-indigo-400 mt-0.5"></i> <span><strong class="text-slate-900 dark:text-white">Quick Sale POS:</strong> Catat penjualan hanya dengan 3 tap.</span></li>
+                                    <li class="flex items-start gap-3"><i class="fas fa-check-circle text-indigo-600 dark:text-indigo-400 mt-0.5"></i> <span><strong class="text-slate-900 dark:text-white">Smart Inventory:</strong> HPP Calculator otomatis &amp; peringatan stok kritis.</span></li>
+                                    <li class="flex items-start gap-3"><i class="fas fa-check-circle text-indigo-600 dark:text-indigo-400 mt-0.5"></i> <span><strong class="text-slate-900 dark:text-white">Profit Analyzer:</strong> Hindari produk boncos, fokus pada produk yang cuan.</span></li>
+                                </ul>
+
+                                <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                                    <button id="btn-business-manager-access"
+                                        onclick="
+                                            if (localStorage.getItem('auth_token')) {
+                                                window.location.href = '/business-manager';
+                                            } else {
+                                                localStorage.setItem('login_redirect', '/business-manager');
+                                                document.dispatchEvent(new CustomEvent('open-login-modal'));
+                                            }
+                                        "
+                                        class="px-6 py-4 bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-500 hover:to-blue-400 text-white font-bold rounded-xl transition-all shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:-translate-y-1 flex items-center justify-center gap-2 group w-full sm:w-auto">
+                                        <i class="fas fa-rocket group-hover:scale-110 transition-transform"></i>
+                                        <span id="btn-business-manager-label">Akses Business Manager</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
         </section>
         <script>
@@ -1796,6 +1934,10 @@
             var lbl = document.getElementById('btn-cashbook-label');
             if (lbl && !localStorage.getItem('auth_token')) {
                 lbl.textContent = 'Login & Akses Gratis';
+            }
+            var bmlbl = document.getElementById('btn-business-manager-label');
+            if (bmlbl && !localStorage.getItem('auth_token')) {
+                bmlbl.textContent = 'Login & Akses Gratis';
             }
         })();
         </script>

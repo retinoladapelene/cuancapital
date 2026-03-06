@@ -1,0 +1,957 @@
+/* ═══════════════════════════════════════════════════════════════════
+   business-modules.css — Per-module component styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── KPI Cards Grid ─────────────────────────────────────────────────── */
+.biz-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.biz-kpi-card {
+    background: var(--biz-surface);
+    border: 1px solid var(--biz-border);
+    border-radius: var(--biz-radius);
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    contain: content;
+}
+
+.biz-kpi-card::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    opacity: .06;
+}
+
+.biz-kpi-card.revenue::before {
+    background: var(--biz-primary);
+}
+
+.biz-kpi-card.profit::before {
+    background: var(--biz-success);
+}
+
+.biz-kpi-card.expense::before {
+    background: var(--biz-danger);
+}
+
+.biz-kpi-card.orders::before {
+    background: var(--biz-warning);
+}
+
+.biz-kpi-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--biz-text-muted);
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.biz-kpi-label i {
+    font-size: 10px;
+}
+
+.biz-kpi-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--biz-text);
+    line-height: 1.1;
+    letter-spacing: -.5px;
+}
+
+.biz-kpi-trend {
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.biz-kpi-trend.up {
+    color: var(--biz-success);
+}
+
+.biz-kpi-trend.down {
+    color: var(--biz-danger);
+}
+
+.biz-kpi-trend.flat {
+    color: var(--biz-text-muted);
+}
+
+/* Desktop: 4-column KPI */
+@media (min-width: 769px) {
+    .biz-kpi-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+
+    .biz-kpi-value {
+        font-size: 24px;
+    }
+}
+
+/* ── Insight Box ─────────────────────────────────────────────────────── */
+.biz-insight-box {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--biz-radius);
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.biz-insight-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--biz-primary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.biz-insight-list {
+    list-style: none;
+}
+
+.biz-insight-list li {
+    font-size: 13px;
+    color: var(--biz-text);
+    padding: 4px 0;
+    padding-left: 16px;
+    position: relative;
+    line-height: 1.5;
+}
+
+.biz-insight-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--biz-primary);
+    font-weight: 700;
+}
+
+/* ── Sparkline Chart Container ─────────────────────────────────────── */
+.biz-chart-wrap {
+    background: var(--biz-surface);
+    border: 1px solid var(--biz-border);
+    border-radius: var(--biz-radius);
+    padding: 18px;
+    margin-bottom: 14px;
+}
+
+.biz-chart-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--biz-text-dim);
+    margin-top: 8px;
+}
+
+.biz-sparkline-svg {
+    width: 100%;
+    height: 80px;
+    overflow: visible;
+}
+
+/* ── Quick Actions ───────────────────────────────────────────────────── */
+.biz-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.biz-quick-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 8px;
+    background: var(--biz-surface);
+    border: 1px solid var(--biz-border);
+    border-radius: var(--biz-radius);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--biz-text-muted);
+    font-family: var(--biz-font);
+    transition: all .15s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.biz-quick-btn:hover,
+.biz-quick-btn:focus {
+    background: var(--biz-primary-light);
+    border-color: var(--biz-primary);
+    color: var(--biz-primary);
+}
+
+.biz-quick-btn:active {
+    transform: scale(.95);
+}
+
+.biz-quick-btn i {
+    font-size: 20px;
+}
+
+/* ── Top Products Widget ────────────────────────────────────────────── */
+.biz-top-product-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--biz-border);
+}
+
+.biz-top-product-item:last-child {
+    border-bottom: none;
+}
+
+.biz-rank {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--biz-primary-light);
+    color: var(--biz-primary);
+    font-size: 11px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.biz-rank.gold {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.biz-rank.silver {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+}
+
+.biz-rank.bronze {
+    background: rgba(180, 83, 9, 0.15);
+    color: #b45309;
+}
+
+/* ── Health Score Card ───────────────────────────────────────────────── */
+.biz-health-card {
+    text-align: center;
+}
+
+.biz-health-score-num {
+    font-size: 48px;
+    font-weight: 900;
+    line-height: 1;
+    background: var(--biz-accent-grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -2px;
+}
+
+.biz-health-status {
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 4px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+}
+
+.biz-health-dots {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin: 10px 0 14px;
+}
+
+.biz-health-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--biz-border);
+}
+
+.biz-health-dot.filled {
+    background: var(--biz-primary);
+}
+
+/* ── Cash Forecast Card ─────────────────────────────────────────────── */
+.biz-forecast-runway {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -.5px;
+}
+
+.biz-forecast-runway.good {
+    color: var(--biz-success);
+}
+
+.biz-forecast-runway.caution {
+    color: var(--biz-warning);
+}
+
+.biz-forecast-runway.danger {
+    color: var(--biz-danger);
+}
+
+/* ── POS Cart Styles ─────────────────────────────────────────────────── */
+.biz-pos-search-wrap {
+    position: relative;
+    margin-bottom: 14px;
+}
+
+.biz-pos-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--biz-text-dim);
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.biz-pos-search {
+    padding-left: 36px !important;
+}
+
+.biz-product-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--biz-surface);
+    border: 1px solid var(--biz-border-strong);
+    border-radius: var(--biz-radius-sm);
+    box-shadow: var(--biz-shadow);
+    z-index: 50;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.biz-product-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background .1s;
+}
+
+.biz-product-option:hover {
+    background: var(--biz-surface-2);
+}
+
+.biz-product-option-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--biz-text);
+}
+
+.biz-product-option-meta {
+    font-size: 11px;
+    color: var(--biz-text-muted);
+    margin-top: 1px;
+}
+
+.biz-product-option-price {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--biz-primary);
+}
+
+.biz-product-option.disabled {
+    opacity: .4;
+    pointer-events: none;
+}
+
+/* Quick product chips */
+.biz-quick-products {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.biz-quick-product-chip {
+    padding: 7px 12px;
+    background: var(--biz-surface-2);
+    border: 1px solid var(--biz-border);
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--biz-text-muted);
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.biz-quick-product-chip:hover {
+    background: var(--biz-primary-light);
+    color: var(--biz-primary);
+    border-color: var(--biz-primary);
+}
+
+/* Cart items */
+.biz-cart-items {
+    margin: 14px 0;
+}
+
+.biz-cart-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--biz-border);
+    animation: slideIn .2s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.biz-cart-item:last-child {
+    border-bottom: none;
+}
+
+.biz-cart-item-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--biz-text);
+}
+
+.biz-cart-item-remove {
+    color: var(--biz-danger);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+}
+
+/* Cart totals */
+.biz-cart-total {
+    background: var(--biz-surface-2);
+    border-radius: var(--biz-radius-sm);
+    padding: 14px;
+    margin: 14px 0;
+}
+
+.biz-cart-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    padding: 3px 0;
+}
+
+.biz-cart-total-row.total-row {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--biz-text);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--biz-border);
+}
+
+.biz-cart-total-row.profit-row .biz-cart-total-val {
+    color: var(--biz-success);
+    font-weight: 700;
+}
+
+.biz-detail-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--biz-primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 14px;
+}
+
+.biz-detail-panel {
+    display: none;
+}
+
+.biz-detail-panel.open {
+    display: block;
+}
+
+/* Payment method chips */
+.biz-payment-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.biz-pay-chip {
+    padding: 8px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--biz-border);
+    cursor: pointer;
+    background: var(--biz-surface-2);
+    color: var(--biz-text-muted);
+    transition: all .15s;
+}
+
+.biz-pay-chip.active {
+    background: var(--biz-primary-light);
+    color: var(--biz-primary);
+    border-color: var(--biz-primary);
+}
+
+/* ── Product Card ─────────────────────────────────────────────────────── */
+.biz-product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.biz-product-card {
+    background: var(--biz-surface);
+    border: 1px solid var(--biz-border);
+    border-radius: var(--biz-radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: border-color .15s, transform .15s;
+    contain: content;
+}
+
+.biz-product-card:hover {
+    border-color: var(--biz-primary);
+    transform: translateY(-1px);
+}
+
+.biz-product-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--biz-primary-light);
+    color: var(--biz-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.biz-product-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--biz-text);
+    margin-bottom: 4px;
+}
+
+.biz-product-price {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--biz-primary);
+}
+
+.biz-product-meta {
+    font-size: 11px;
+    color: var(--biz-text-muted);
+    margin-top: 3px;
+}
+
+.biz-stock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 6px;
+}
+
+.biz-stock-badge.ok {
+    color: var(--biz-success);
+}
+
+.biz-stock-badge.low {
+    color: var(--biz-warning);
+}
+
+.biz-stock-badge.out {
+    color: var(--biz-danger);
+}
+
+/* ── HPP Calculator ────────────────────────────────────────────────── */
+.biz-hpp-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--biz-border);
+}
+
+.biz-hpp-row:last-child {
+    border-bottom: none;
+}
+
+.biz-hpp-total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0 4px;
+    font-weight: 700;
+    font-size: 14px;
+    border-top: 1px solid var(--biz-border-strong);
+    margin-top: 8px;
+}
+
+.biz-margin-display {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.04));
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: var(--biz-radius-sm);
+    padding: 12px;
+    text-align: center;
+    margin-top: 12px;
+}
+
+.biz-margin-pct {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--biz-success);
+}
+
+/* ── Inventory ─────────────────────────────────────────────────────── */
+.biz-low-stock-alert {
+    background: var(--biz-warning-bg);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--biz-radius-sm);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--biz-warning);
+    margin-bottom: 14px;
+}
+
+/* ── Expense List ──────────────────────────────────────────────────── */
+.biz-expense-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--biz-border);
+}
+
+.biz-expense-item:last-child {
+    border-bottom: none;
+}
+
+.biz-expense-cat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--biz-danger-bg);
+    color: var(--biz-danger);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.biz-expense-amount {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--biz-danger);
+}
+
+/* ── Report Charts ──────────────────────────────────────────────────── */
+.biz-report-chart {
+    width: 100%;
+    height: 160px;
+    margin: 8px 0;
+    position: relative;
+}
+
+.biz-report-bar-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 120px;
+    padding: 0 4px;
+}
+
+.biz-report-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.biz-report-bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    transition: height .5s ease;
+    min-height: 2px;
+}
+
+.biz-report-bar.revenue {
+    background: var(--biz-accent-grad);
+}
+
+.biz-report-bar.expense {
+    background: var(--biz-danger-bg);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.biz-report-bar-label {
+    font-size: 9px;
+    color: var(--biz-text-dim);
+}
+
+/* Expense breakdown bars */
+.biz-breakdown-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 72px;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    font-size: 12px;
+}
+
+.biz-breakdown-bar-track {
+    height: 8px;
+    background: var(--biz-surface-2);
+    border-radius: 100px;
+    overflow: hidden;
+}
+
+.biz-breakdown-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: var(--biz-danger);
+    transition: width .6s ease;
+}
+
+/* ── Profit Analyzer ─────────────────────────────────────────────────── */
+.biz-profit-tier {
+    padding: 14px;
+    border-radius: var(--biz-radius-sm);
+    margin-bottom: 10px;
+}
+
+.biz-profit-tier.star {
+    background: rgba(99, 102, 241, 0.07);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.biz-profit-tier.good {
+    background: var(--biz-success-bg);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.biz-profit-tier.warning {
+    background: var(--biz-warning-bg);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.biz-profit-tier.danger {
+    background: var(--biz-danger-bg);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.biz-profit-tier-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--biz-text);
+}
+
+.biz-profit-tier-value {
+    font-size: 14px;
+    font-weight: 800;
+}
+
+/* ── Sales List ─────────────────────────────────────────────────────── */
+.biz-sale-item {
+    background: var(--biz-surface);
+    border: 1px solid var(--biz-border);
+    border-radius: var(--biz-radius-sm);
+    padding: 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color .15s;
+}
+
+.biz-sale-item:hover {
+    border-color: var(--biz-primary);
+}
+
+.biz-sale-meta {
+    font-size: 11px;
+    color: var(--biz-text-muted);
+    margin-top: 4px;
+}
+
+.biz-sale-amount {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--biz-text);
+}
+
+.biz-sale-profit {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--biz-success);
+}
+
+/* ── Backup Reminder ─────────────────────────────────────────────────── */
+.biz-backup-reminder {
+    background: var(--biz-warning-bg);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--biz-radius-sm);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    animation: slideIn .3s ease;
+}
+
+.biz-backup-reminder-text {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--biz-warning);
+}
+
+/* ── Search Bar ─────────────────────────────────────────────────────── */
+.biz-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--biz-surface);
+    border: 1px solid var(--biz-border);
+    border-radius: var(--biz-radius-sm);
+    padding: 0 12px;
+    margin-bottom: 14px;
+}
+
+.biz-search-bar i {
+    color: var(--biz-text-dim);
+    font-size: 13px;
+}
+
+.biz-search-bar input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--biz-text);
+    font-size: 13px;
+    font-family: var(--biz-font);
+    padding: 10px 0;
+    outline: none;
+}
+
+.biz-search-bar input::placeholder {
+    color: var(--biz-text-dim);
+}
+
+/* ── Filter Row ──────────────────────────────────────────────────────── */
+.biz-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.biz-filter-row select.biz-input {
+    width: auto;
+    min-width: 130px;
+}
+
+/* ── Month Summary Strip ─────────────────────────────────────────────── */
+.biz-summary-strip {
+    display: flex;
+    gap: 16px;
+    background: var(--biz-surface);
+    border: 1px solid var(--biz-border);
+    border-radius: var(--biz-radius-sm);
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    overflow-x: auto;
+}
+
+.biz-strip-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.biz-strip-label {
+    color: var(--biz-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    font-size: 10px;
+}
+
+.biz-strip-value {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--biz-text);
+}
+
+/* ── Mobile optimizations ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .biz-product-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .biz-quick-actions {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .biz-quick-btn {
+        padding: 12px 6px;
+        font-size: 10px;
+    }
+
+    .biz-quick-btn i {
+        font-size: 18px;
+    }
+}
