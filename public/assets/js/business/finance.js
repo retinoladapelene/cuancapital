@@ -92,12 +92,12 @@ async function bizLoadFinance() {
         </div>
 
         <!-- LAYER 1: Financial Snapshot (KPI Cards) -->
-        <div id="fin-kpi-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:24px">
+        <div id="fin-kpi-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap:12px; margin-bottom:24px">
             <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i> Loading KPIs...</div>
         </div>
 
         <!-- LAYER 2: Visual Analytics (Charts) -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-bottom:24px">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap:20px; margin-bottom:24px">
             <!-- Revenue vs Expense Line Chart -->
             <div class="biz-card" style="flex:2;min-width:320px">
                 <div class="biz-card-header" style="margin-bottom:12px">
@@ -124,10 +124,10 @@ async function bizLoadFinance() {
         </div>
 
         <!-- LAYER 3: Smart Insights -->
-        <div id="fin-smart-insights" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-bottom:24px"></div>
+        <div id="fin-smart-insights" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap:16px; margin-bottom:24px"></div>
 
         <!-- LAYER 4: Expense Breakdown & Stock Intelligence -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px; margin-bottom:24px">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap:20px; margin-bottom:24px">
             <!-- Expense Breakdown Donut -->
             <div class="biz-card">
                 <div class="biz-card-header" style="margin-bottom:12px">

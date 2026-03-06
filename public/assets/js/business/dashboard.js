@@ -28,7 +28,7 @@ async function bizLoadDashboard() {
             
             <!-- ZONE 1: Strategic Business Pulse (KPI Cards) -->
             <!-- Mobile: span 12 (1 col within), Tablet: span 12 (2 col within), Desktop: spans 3 per card manually or flex -->
-            <div style="grid-column: span 12; display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px;" id="dash-zone1-kpi">
+            <div style="grid-column: span 12; display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap:12px;" id="dash-zone1-kpi">
                 ${_dashKpiSkeleton()}
             </div>
 
@@ -137,29 +137,49 @@ async function bizLoadDashboard() {
 
         document.getElementById('dash-zone1-kpi').innerHTML = `
             <div class="biz-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center">
-                <div style="font-size:11px; font-weight:700; color:var(--biz-text-muted); text-transform:uppercase; margin-bottom:4px">Revenue (30H)</div>
-                <div style="font-size:22px; font-weight:800; color:var(--biz-text); letter-spacing:-0.5px">${bizRp(rev30)}</div>
+                <div style="font-size:11px; font-weight:700; color:var(--biz-text-muted); text-transform:uppercase; margin-bottom:4px">Revenue (30D)</div>
+                <div style="font-size:22px; font-weight:800; color:var(--biz-text); letter-spacing:-0.5px" id="dash-kpi-rev">0</div>
                 <div style="font-size:11px; font-weight:600; color:${salesIntel.overview.revGrowth >= 0 ? 'var(--biz-success)' : 'var(--biz-danger)'}; margin-top:4px">
-                    ${salesIntel.overview.revGrowth >= 0 ? '+' : ''}${parseFloat(salesIntel.overview.revGrowth || 0).toFixed(1)}% vs Last Mo
+                    <i class="fas ${salesIntel.overview.revGrowth >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'}"></i> ${Math.abs(salesIntel.overview.revGrowth || 0).toFixed(1)}% vs Last Mo
                 </div>
             </div>
             <div class="biz-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center">
-                <div style="font-size:11px; font-weight:700; color:var(--biz-text-muted); text-transform:uppercase; margin-bottom:4px">Profit (30H)</div>
-                <div style="font-size:22px; font-weight:800; color:var(--biz-success); letter-spacing:-0.5px">${bizRp(netProfit30)}</div>
+                <div style="font-size:11px; font-weight:700; color:var(--biz-text-muted); text-transform:uppercase; margin-bottom:4px">Profit (30D)</div>
+                <div style="font-size:22px; font-weight:800; color:var(--biz-success); letter-spacing:-0.5px" id="dash-kpi-prof">0</div>
             </div>
             <div class="biz-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center">
                 <div style="font-size:11px; font-weight:700; color:var(--biz-text-muted); text-transform:uppercase; margin-bottom:4px">Total Orders</div>
-                <div style="font-size:22px; font-weight:800; color:var(--biz-text); letter-spacing:-0.5px">${ords}</div>
+                <div style="font-size:22px; font-weight:800; color:var(--biz-text); letter-spacing:-0.5px" id="dash-kpi-ord">0</div>
             </div>
             <div class="biz-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center">
                 <div style="font-size:11px; font-weight:700; color:var(--biz-text-muted); text-transform:uppercase; margin-bottom:4px">Cash Balance</div>
-                <div style="font-size:22px; font-weight:800; color:var(--biz-text); letter-spacing:-0.5px">${bizRp(cashBal)}</div>
+                <div style="font-size:22px; font-weight:800; color:var(--biz-text); letter-spacing:-0.5px" id="dash-kpi-cash">0</div>
             </div>
         `;
 
+        // Execute Micro-Interaction Counting Animation
+        if (typeof bizAnimateValue === 'function') {
+            bizAnimateValue(document.getElementById('dash-kpi-rev'), 0, rev30, 800, true);
+            bizAnimateValue(document.getElementById('dash-kpi-prof'), 0, netProfit30, 800, true);
+            bizAnimateValue(document.getElementById('dash-kpi-ord'), 0, ords, 800, false);
+            bizAnimateValue(document.getElementById('dash-kpi-cash'), 0, cashBal, 800, true);
+        } else {
+            document.getElementById('dash-kpi-rev').textContent = bizRp(rev30);
+            document.getElementById('dash-kpi-prof').textContent = bizRp(netProfit30);
+            document.getElementById('dash-kpi-ord').textContent = ords;
+            document.getElementById('dash-kpi-cash').textContent = bizRp(cashBal);
+        }
+
         // ZONE 2: Live Pulse
-        document.getElementById('dash-live-qty').textContent = salesIntel.realtime.ord60m;
-        document.getElementById('dash-live-rev').textContent = bizRpFull(salesIntel.realtime.rev60m);
+        const liveQty = document.getElementById('dash-live-qty');
+        const liveRev = document.getElementById('dash-live-rev');
+        if (typeof bizAnimateValue === 'function') {
+            bizAnimateValue(liveQty, 0, salesIntel.realtime.ord60m, 600, false);
+            bizAnimateValue(liveRev, 0, salesIntel.realtime.rev60m, 600, true);
+        } else {
+            liveQty.textContent = salesIntel.realtime.ord60m;
+            liveRev.textContent = bizRpFull(salesIntel.realtime.rev60m);
+        }
     }
 
     // ZONE 3: Profit Radar

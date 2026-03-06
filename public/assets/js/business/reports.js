@@ -179,7 +179,7 @@ async function repRenderAIAndLayer1() {
     const hlth = typeof bizHealthScore === 'function' ? bizHealthScore(snapshots, bizId) : { score: 0, status: 'Unknown', color: 'gray' };
 
     let layer1Html = `
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:12px; margin-bottom:12px">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr)); gap:12px; margin-bottom:12px">
         <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700;margin-bottom:4px">REVENUE</div><div style="font-size:18px;font-weight:800;margin-bottom:6px">${bizRp(curRev)}</div>${_repCalcDeltaHTML(curRev, prevRev)}</div>
         <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700;margin-bottom:4px">PROFIT</div><div style="font-size:18px;font-weight:800;color:var(--biz-success);margin-bottom:6px">${bizRp(curProf)}</div>${_repCalcDeltaHTML(curProf, prevProf)}</div>
         <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700;margin-bottom:4px">EXPENSE</div><div style="font-size:18px;font-weight:800;color:var(--biz-danger);margin-bottom:6px">${bizRp(curExpSum)}</div>${_repCalcDeltaHTML(curExpSum, prevExpSum, true)}</div>
@@ -323,7 +323,7 @@ function _repRenderProfitLayer(container) {
         `).join('');
     }
 
-    container.innerHTML = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+    container.innerHTML = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap:20px;">
         <div class="biz-card">
             <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-danger)"></i> Operational Breakdown</div></div>
             <div style="height:180px;position:relative"><canvas id="repExpDonutChart"></canvas></div>

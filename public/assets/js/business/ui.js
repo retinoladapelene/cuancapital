@@ -218,6 +218,38 @@ async function bizBootstrap() {
 }
 window.bizBootstrap = bizBootstrap;
 
+// ── Number Animator (Fintech Micro-Interaction) ──────────────────────────────
+function bizAnimateValue(el, start, end, duration = 800, isCurrency = false) {
+    if (!el) return;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        // Ease out cubic
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(easeOut * (end - start) + start);
+
+        // Assume bizRpFull exists globally, fallback if not
+        if (isCurrency && typeof bizRpFull === 'function') {
+            el.textContent = bizRpFull(current);
+        } else {
+            el.textContent = current.toLocaleString('id-ID');
+        }
+
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        } else {
+            if (isCurrency && typeof bizRpFull === 'function') {
+                el.textContent = bizRpFull(end);
+            } else {
+                el.textContent = end.toLocaleString('id-ID');
+            }
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+window.bizAnimateValue = bizAnimateValue;
+
 // ── Product Search Helper (used by Sales & Products) ─────────────────────────
 function bizSearchProducts(query) {
     const q = (query || '').toLowerCase().trim();

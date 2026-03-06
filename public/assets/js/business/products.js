@@ -219,14 +219,12 @@ async function bizLoadProducts() {
             
             <div style="overflow-x:auto;">
                 <table style="width:100%;text-align:left;border-collapse:collapse;min-width:900px">
-                    <thead style="background:var(--biz-surface-2);font-size:11px;font-weight:700;color:var(--biz-text-dim);text-transform:uppercase;letter-spacing:0.5px">
+                    <thead style="background:var(--biz-surface-2);font-size:11px;font-weight:700;color:var(--biz-text-dim);text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;z-index:10;box-shadow:0 1px 0 var(--biz-border)">
                         <tr>
-                            <th style="padding:12px 16px">Produk</th>
-                            <th style="padding:12px 16px;text-align:right">Harga Jual</th>
-                            <th style="padding:12px 16px;text-align:right">Margin %</th>
-                            <th style="padding:12px 16px;text-align:right">Penjualan (30D)</th>
-                            <th style="padding:12px 16px;text-align:right">Revenue (30D)</th>
-                            <th style="padding:12px 16px;text-align:right">Profit (30D)</th>
+                            <th style="padding:12px 16px">Produk & Kategori</th>
+                            <th style="padding:12px 16px;text-align:right">Harga & Margin</th>
+                            <th style="padding:12px 16px;text-align:right">Unit Terjual (30D)</th>
+                            <th style="padding:12px 16px;text-align:right">Revenue & Profit</th>
                             <th style="padding:12px 16px;text-align:center">Lifecycle</th>
                             <th style="padding:12px 16px;text-align:right">Aksi</th>
                         </tr>
@@ -252,7 +250,7 @@ async function bizLoadProducts() {
 function _prodRenderLayer1() {
     const { stats } = window._prodSysData;
     const html = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%, 140px),1fr));gap:12px">
         <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">TOTAL PRODUK</div><div style="font-size:20px;font-weight:800;margin-top:4px">${stats.totalProducts}</div></div>
         <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">REVENUE 30D</div><div style="font-size:20px;font-weight:800;color:var(--biz-primary);margin-top:4px">${bizRpFull(stats.totalRev30d)}</div></div>
         <div class="biz-card" style="padding:16px;border:1px solid rgba(16,185,129,0.2)"><div style="font-size:11px;color:var(--biz-success);font-weight:700">MARGIN TINGGI</div><div style="font-size:20px;font-weight:800;color:var(--biz-success);margin-top:4px">${stats.highMargin}</div></div>
@@ -321,21 +319,40 @@ function _prodRenderLayer4() {
     const container = document.getElementById('prod-layer-4');
     if (typeof Chart === 'undefined') { setTimeout(_prodRenderLayer4, 500); return; }
 
-    container.innerHTML = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+    const rd = window._prodSysData;
+
+    // Insights Logic
+    const topRevName = rd.top10Rev.labels[0] || 'N/A';
+    const topProfName = rd.top10Prof.labels[0] || 'N/A';
+    const marginUnder10 = rd.distribution.under10;
+    const marginLabel = marginUnder10 > 5 ? `<span style="color:var(--biz-danger)">${marginUnder10} Produk Margin Rendah</span>` : `<span style="color:var(--biz-success)">Margin Sehat</span>`;
+
+    container.innerHTML = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap:20px;">
         <div class="biz-card">
-            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-money-bill-wave" style="color:var(--biz-success)"></i> Top 10 Revenue</div></div>
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-money-bill-wave" style="color:var(--biz-success)"></i> Top 10 Revenue</div>
+                <div style="font-size:11px; font-weight:700; color:var(--biz-success)">#1: ${_esc(topRevName)}</div>
+            </div>
             <div style="height:220px;position:relative;padding:10px"><canvas id="prodRevChart"></canvas></div>
         </div>
         <div class="biz-card">
-            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-hand-holding-dollar" style="color:var(--biz-primary)"></i> Top 10 Profit</div></div>
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-hand-holding-dollar" style="color:var(--biz-primary)"></i> Top 10 Profit</div>
+                <div style="font-size:11px; font-weight:700; color:var(--biz-primary)">#1: ${_esc(topProfName)}</div>
+            </div>
             <div style="height:220px;position:relative;padding:10px"><canvas id="prodProfChart"></canvas></div>
         </div>
         <div class="biz-card">
-            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-warning)"></i> Revenue Concentration</div></div>
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-warning)"></i> Revenue Concentration</div>
+            </div>
             <div style="height:220px;position:relative;padding:10px"><canvas id="prodConcChart"></canvas></div>
         </div>
         <div class="biz-card">
-            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-tags" style="color:var(--biz-purple)"></i> Margin Distribution</div></div>
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-tags" style="color:var(--biz-purple)"></i> Margin Distribution</div>
+                <div style="font-size:11px; font-weight:700;">${marginLabel}</div>
+            </div>
             <div style="height:220px;position:relative;padding:10px"><canvas id="prodMarginChart"></canvas></div>
         </div>
     </div>`;
@@ -350,7 +367,7 @@ function _prodRenderLayer4() {
     if (window.bizProdConcChartInst) window.bizProdConcChartInst.destroy();
     if (window.bizProdMarginChartInst) window.bizProdMarginChartInst.destroy();
 
-    const rd = window._prodSysData;
+    // rd already declared above
 
     window.bizProdRevChartInst = new Chart(ctxRev, {
         type: 'bar',
@@ -425,24 +442,19 @@ function prodRenderChunk(startIdx, query) {
         return `<tr style="border-bottom:1px solid var(--biz-border);transition:all 0.2s">
             <td style="padding:12px 16px">
                 <div style="font-weight:700;font-size:13px;color:var(--biz-text)">${_esc(p.name)}</div>
-                <div style="font-size:11px;color:var(--biz-text-muted);margin-top:2px">${_esc(p.sku)}</div>
+                <div style="font-size:11px;color:var(--biz-text-muted);margin-top:2px">${_esc(p.category || 'General')} · ${_esc(p.sku)}</div>
             </td>
             <td style="padding:12px 16px;text-align:right">
                 <span style="font-size:13px;font-weight:700">${bizRp(p.price)}</span>
-                <div style="font-size:10px;color:var(--biz-text-muted);margin-top:2px">HPP: ${bizRp(p.hpp)}</div>
-            </td>
-            <td style="padding:12px 16px;text-align:right">
-                <span style="font-size:13px;font-weight:800;color:${mTxt}">${p.marginPct}%</span>
+                <div style="font-size:10px;font-weight:800;color:${mTxt};margin-top:2px">${p.marginPct}% Margin</div>
             </td>
             <td style="padding:12px 16px;text-align:right">
                 <div style="font-weight:700;font-size:13px">${p.sold30d} <span style="font-size:10px;color:var(--biz-text-dim)">pcs</span></div>
-                <div style="font-size:10px;color:var(--biz-text-muted);margin-top:2px">${p.avgDaily} / hr</div>
+                <div style="font-size:10px;color:var(--biz-text-muted);margin-top:2px"><i class="fas fa-clock"></i> ${p.avgDaily} / hr</div>
             </td>
             <td style="padding:12px 16px;text-align:right">
-                <div style="font-weight:700;font-size:13px;color:var(--biz-success)">${bizRpFull(p.rev30d)}</div>
-            </td>
-            <td style="padding:12px 16px;text-align:right">
-                <div style="font-weight:700;font-size:13px;color:var(--biz-primary)">${bizRpFull(p.prof30d)}</div>
+                <div style="font-weight:700;font-size:13px;color:var(--biz-success)">${bizRpFull(p.rev30d)} Rev</div>
+                <div style="font-weight:700;font-size:10px;color:var(--biz-primary);margin-top:2px">${bizRpFull(p.prof30d)} Prof</div>
             </td>
             <td style="padding:12px 16px;text-align:center">
                 <span style="display:inline-block;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:800;${lCol}">

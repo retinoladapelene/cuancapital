@@ -46,13 +46,16 @@
     /* Layout & Shadow */
     --biz-nav-h: 62px;
     --biz-sidebar-w: 240px;
-    --biz-radius: 14px;
-    /* Native rounded corners */
+    --biz-radius: 16px;
+    /* Premium Startup Radius */
     --biz-radius-sm: 8px;
+    /* Soft badge radius */
     --biz-radius-lg: 20px;
-    --biz-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
-    /* Soft shadow */
+    --biz-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    /* Soft premium shadow */
     --biz-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.02);
+    /* Hover Drop Shadow */
+    --biz-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
 
     /* Typography */
     --biz-font: 'Inter', system-ui, -apple-system, sans-serif;
@@ -570,21 +573,21 @@ body {
 /* ── Cards ──────────────────────────────────────────────────────────── */
 .biz-card {
     background: var(--biz-surface);
-    border: 1px solid var(--biz-border);
+    border: none;
     border-radius: var(--biz-radius);
-    padding: 18px;
+    padding: 20px;
     box-shadow: var(--biz-shadow);
     contain: content;
     transition: all var(--motion-base) var(--ease-fintech);
 }
 
 .biz-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    transform: translateY(-2px);
+    box-shadow: var(--biz-shadow-hover);
 }
 
 .biz-card-sm {
-    padding: 14px 16px;
+    padding: 16px;
 }
 
 .biz-card+.biz-card {
@@ -1104,6 +1107,7 @@ textarea.biz-input {
     height: 36px;
     line-height: 36px;
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 .biz-stepper-val::-webkit-inner-spin-button,

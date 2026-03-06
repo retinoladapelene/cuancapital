@@ -286,7 +286,7 @@ async function bizLoadSales() {
         <div id="sales-layer-1" style="margin-bottom:24px;"></div>
 
         <!-- Layer 2 & 3: Pulse & Alerts (Grid side by side on desktop) -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom:24px;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap:16px; margin-bottom:24px;">
             <div id="sales-layer-2"></div>
             <div id="sales-layer-3"></div>
         </div>
@@ -344,7 +344,7 @@ function _salesRenderLayer1() {
     const refundColor = overview.refundRate > 5 ? 'var(--biz-danger)' : 'var(--biz-text)';
 
     document.getElementById('sales-layer-1').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%, 130px),1fr));gap:12px">
         <div class="biz-card" style="padding:16px;border:1px solid rgba(16,185,129,0.3)">
             <div style="font-size:11px;color:var(--biz-success);font-weight:800">REVENUE 30D</div>
             <div style="font-size:20px;font-weight:800;color:var(--biz-success);margin-top:4px">${bizRpFull(overview.rev30)}</div>
@@ -433,11 +433,18 @@ function _salesRenderCharts() {
     const container = document.getElementById('sales-chart-container');
     if (typeof Chart === 'undefined') { setTimeout(_salesRenderCharts, 500); return; }
 
+    const sd = window._salesSysData;
+    const revDir = sd.overview.revGrowth >= 0 ? 'Naik' : 'Turun';
+    const revColor = sd.overview.revGrowth >= 0 ? 'var(--biz-success)' : 'var(--biz-danger)';
+
     container.innerHTML = `
     <!-- Tren & Komposisi -->
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:20px; margin-bottom:24px;">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap:20px; margin-bottom:24px;">
         <div class="biz-card">
-            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-line" style="color:var(--biz-primary)"></i> Revenue vs Volume Trend (30D)</div></div>
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-chart-line" style="color:var(--biz-primary)"></i> Revenue Trend (30D)</div>
+                <div style="font-size:11px; font-weight:700; color:${revColor}">Tren ${revDir} ${Math.abs(sd.overview.revGrowth).toFixed(1)}%</div>
+            </div>
             <div style="height:260px;position:relative;padding:10px"><canvas id="salesTrendChart"></canvas></div>
         </div>
         <div class="biz-card">
@@ -450,18 +457,22 @@ function _salesRenderCharts() {
     </div>
     
     <!-- Produk & Customer -->
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:20px;">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap:20px;">
         <div class="biz-card">
-            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-boxes-stacked" style="color:var(--biz-success)"></i> Product Performance</div></div>
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-boxes-stacked" style="color:var(--biz-success)"></i> Product Performance</div>
+                <div style="font-size:11px; font-weight:700; color:var(--biz-success)">Top: ${_esc(sd.product.topRev[0]?.name || 'N/A')}</div>
+            </div>
             <div style="height:240px;position:relative;padding:10px"><canvas id="salesProdDualChart"></canvas></div>
         </div>
         <div class="biz-card">
-            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-users" style="color:var(--biz-purple)"></i> Customer Loyalty Frequency</div></div>
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-users" style="color:var(--biz-purple)"></i> Customer Loyalty Frequency</div>
+                <div style="font-size:11px; font-weight:700; color:var(--biz-primary)">${sd.overview.repeatRate.toFixed(1)}% Repeat Rate</div>
+            </div>
             <div style="height:240px;position:relative;padding:10px"><canvas id="salesFreqChart"></canvas></div>
         </div>
     </div>`;
-
-    const sd = window._salesSysData;
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
     // 1. Dual Line Trend Chart

@@ -55,13 +55,13 @@ async function bizLoadInventory() {
             
             <div style="overflow-x:auto;">
                 <table style="width:100%;text-align:left;border-collapse:collapse;min-width:700px">
-                    <thead style="background:var(--biz-surface-2);font-size:11px;font-weight:700;color:var(--biz-text-dim);text-transform:uppercase;letter-spacing:0.5px">
+                    <thead style="background:var(--biz-surface-2);font-size:11px;font-weight:700;color:var(--biz-text-dim);text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;z-index:10;box-shadow:0 1px 0 var(--biz-border)">
                         <tr>
-                            <th style="padding:12px 16px">Produk</th>
-                            <th style="padding:12px 16px;text-align:right">Stok</th>
-                            <th style="padding:12px 16px;text-align:center">Velocitas</th>
-                            <th style="padding:12px 16px;text-align:right">Nilai Stok</th>
-                            <th style="padding:12px 16px;text-align:right">Status</th>
+                            <th style="padding:12px 16px">Produk & Kategori</th>
+                            <th style="padding:12px 16px;text-align:right">Stok Aktif</th>
+                            <th style="padding:12px 16px;text-align:center">Kecepatan Jual</th>
+                            <th style="padding:12px 16px;text-align:right">Nilai & Margin</th>
+                            <th style="padding:12px 16px;text-align:center">Status</th>
                             <th style="padding:12px 16px;text-align:right">Aksi</th>
                         </tr>
                     </thead>
@@ -107,7 +107,7 @@ function _invRenderLayer1() {
         </div>
 
         <!-- 6 Micro KPIs -->
-        <div style="flex:2;min-width:300px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
+        <div style="flex:2;min-width:min(100%, 300px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%, 120px),1fr));gap:12px">
             <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">TOTAL PRODUK</div><div style="font-size:20px;font-weight:800;margin-top:4px">${totalItems}</div></div>
             <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">TOTAL UNIT</div><div style="font-size:20px;font-weight:800;margin-top:4px">${totalQty.toLocaleString('id-ID')}</div></div>
             <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">NILAI STOK</div><div style="font-size:18px;font-weight:800;color:var(--biz-primary);margin-top:4px">${bizRp(totalValue)}</div></div>
@@ -188,18 +188,25 @@ function _invRenderLayer4() {
         return;
     }
 
+    const { counts, burnRates } = window._invSysData;
+    const deadAgeText = counts.dead > 0 ? `<span style="color:var(--biz-danger)">${counts.dead} Produk Dead</span>` : `<span style="color:var(--biz-success)">Aman</span>`;
+
     container.innerHTML = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
         <div class="biz-card">
-            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-primary)"></i> Stock Distribution</div></div>
-            <div style="height:220px;position:relative"><canvas id="invDistChart"></canvas></div>
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-primary)"></i> Stock Distribution</div>
+                <div style="font-size:11px; font-weight:700; color:var(--biz-success)">${counts.fast} Fast Moving</div>
+            </div>
+            <div style="height:220px;position:relative;padding:10px"><canvas id="invDistChart"></canvas></div>
         </div>
         <div class="biz-card">
-            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-skull" style="color:var(--biz-danger)"></i> Dead Stock Age</div></div>
-            <div style="height:220px;position:relative"><canvas id="invDeadAgeChart"></canvas></div>
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-skull" style="color:var(--biz-danger)"></i> Dead Stock Age</div>
+                <div style="font-size:11px; font-weight:700;">${deadAgeText}</div>
+            </div>
+            <div style="height:220px;position:relative;padding:10px"><canvas id="invDeadAgeChart"></canvas></div>
         </div>
     </div>`;
-
-    const { counts, burnRates } = window._invSysData;
 
     // Dist Chart
     const ctxDist = document.getElementById('invDistChart');
@@ -288,20 +295,21 @@ function invRenderChunk(startIdx, query) {
         return `<tr style="border-bottom:1px solid var(--biz-border);transition:all 0.2s">
             <td style="padding:12px 16px">
                 <div style="font-weight:700;font-size:13px;color:var(--biz-text)">${_esc(p.name)}</div>
-                <div style="font-size:11px;color:var(--biz-text-muted);margin-top:2px">${_esc(p.sku)}</div>
+                <div style="font-size:11px;color:var(--biz-text-muted);margin-top:2px">${_esc(p.category || 'General')} · ${_esc(p.sku)}</div>
             </td>
             <td style="padding:12px 16px;text-align:right">
                 <span style="font-size:14px;font-weight:900">${p.stock}</span>
+                <div style="font-size:10px;color:var(--biz-text-dim);margin-top:2px">Unit Tersedia</div>
             </td>
             <td style="padding:12px 16px;text-align:center">
                 <div style="font-weight:700;font-size:13px">${p.avgDaily} <span style="font-size:10px;color:var(--biz-text-dim)">/hr</span></div>
-                <div style="font-size:10px;color:var(--biz-text-muted);margin-top:2px">L terjual: ${dateTx}</div>
+                <div style="font-size:10px;color:var(--biz-text-muted);margin-top:2px"><i class="fas fa-clock"></i> L terjual: ${dateTx}</div>
             </td>
             <td style="padding:12px 16px;text-align:right">
                 <div style="font-weight:700;font-size:13px">${bizRp(p.stockValue)}</div>
-                <div style="font-size:10px;${p.marginPct > 0 ? 'color:var(--biz-success)' : 'color:var(--biz-danger)'};font-weight:700;margin-top:2px">${p.marginPct}% Mrgn</div>
+                <div style="font-size:10px;${p.marginPct >= 0 ? 'color:var(--biz-success)' : 'color:var(--biz-danger)'};font-weight:700;margin-top:2px">${p.marginPct}% Margin Profit</div>
             </td>
-            <td style="padding:12px 16px;text-align:right">
+            <td style="padding:12px 16px;text-align:center">
                 <span style="display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:800;${badgeCol}">${p.masterStatus}</span>
             </td>
             <td style="padding:12px 16px;text-align:right">
