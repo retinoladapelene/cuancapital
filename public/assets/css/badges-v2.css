@@ -1,0 +1,860 @@
+/* ============================
+   BADGE 1: Supreme Cuan — GOLD LUXURY GLOW
+============================ */
+.badge-supreme {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px 5px 8px;
+  border-radius: 100px;
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #1a0a00, #3d1f00);
+  border: 1px solid #c97d10;
+  color: #ffd166;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  box-shadow: 0 0 12px rgba(255, 185, 0, 0.25), inset 0 1px 0 rgba(255, 220, 100, 0.1);
+  animation: supreme-pulse 3s ease-in-out infinite;
+}
+
+.badge-supreme::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 210, 80, 0.12) 50%, transparent 100%);
+  transform: translateX(-100%);
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
+.badge-supreme .badge-icon {
+  font-size: 13px;
+  filter: drop-shadow(0 0 4px rgba(255, 185, 0, 0.8));
+  animation: coin-spin 4s linear infinite;
+}
+
+@keyframes supreme-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(255, 185, 0, 0.25), inset 0 1px 0 rgba(255, 220, 100, 0.1);
+  }
+
+  50% {
+    box-shadow: 0 0 22px rgba(255, 185, 0, 0.5), 0 0 40px rgba(255, 185, 0, 0.15), inset 0 1px 0 rgba(255, 220, 100, 0.2);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  60%,
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes coin-spin {
+  0% {
+    transform: rotateY(0deg);
+  }
+
+  45%,
+  55% {
+    transform: rotateY(360deg);
+  }
+
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+/* ============================
+   BADGE 2: Scholar Elite — Deep Navy + Stars
+============================ */
+.badge-scholar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 9px;
+  border-radius: 100px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #0a0e2a, #1a2060);
+  border: 1px solid #4a5ff7;
+  color: #a5b4ff;
+  box-shadow: 0 0 16px rgba(74, 95, 247, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.badge-scholar::after {
+  content: '✦  ✦  ✦';
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 6px;
+  color: rgba(165, 180, 255, 0.3);
+  letter-spacing: 3px;
+  animation: stars-slide 3s linear infinite;
+}
+
+@keyframes stars-slide {
+  0% {
+    right: 100%;
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    right: -30px;
+    opacity: 0;
+  }
+}
+
+.badge-scholar .badge-icon {
+  font-size: 12px;
+  filter: drop-shadow(0 0 3px #7c86ff);
+}
+
+/* ============================
+   BADGE 3: Grand Master — Dark Purple Holo
+============================ */
+.badge-grandmaster {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px 5px 9px;
+  border-radius: 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  background: linear-gradient(135deg, #1a0428, #2d0a50);
+  border: 1px solid transparent;
+  color: #e879f9;
+  background-clip: padding-box;
+  position: relative;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.35), inset 0 0 20px rgba(168, 85, 247, 0.05);
+}
+
+.badge-grandmaster::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #9333ea, #c026d3, #7c3aed, #9333ea);
+  background-size: 300% 300%;
+  z-index: -1;
+  animation: holo-rotate 3s linear infinite;
+}
+
+@keyframes holo-rotate {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.badge-grandmaster .badge-icon {
+  font-size: 13px;
+  filter: drop-shadow(0 0 5px #e879f9);
+}
+
+/* ============================
+   BADGE 4: Summa Cum Laude — Cream + Gold Academic
+============================ */
+.badge-summa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px 5px 9px;
+  border-radius: 6px;
+  font-family: 'Playfair Display', serif;
+  font-size: 11px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #2a1f00, #3d2c00);
+  border-top: 2px solid #d4a843;
+  border-bottom: 2px solid #d4a843;
+  border-left: 1px solid #8a6a1a;
+  border-right: 1px solid #8a6a1a;
+  color: #f5d98a;
+  position: relative;
+  box-shadow: 0 2px 12px rgba(212, 168, 67, 0.2);
+}
+
+.badge-summa::before,
+.badge-summa::after {
+  content: '✦';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #d4a843;
+  font-size: 8px;
+  opacity: 0.7;
+}
+
+.badge-summa::before {
+  left: -10px;
+}
+
+.badge-summa::after {
+  right: -10px;
+}
+
+.badge-summa .badge-icon {
+  font-size: 12px;
+}
+
+/* ============================
+   BADGE 5: Prodigy — Neon Green Cyber
+============================ */
+.badge-prodigy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px 5px 9px;
+  border-radius: 4px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: #020f02;
+  border: 1px solid #00ff7f;
+  color: #00ff7f;
+  box-shadow: 0 0 8px rgba(0, 255, 127, 0.3), inset 0 0 8px rgba(0, 255, 127, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.badge-prodigy::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: #00ff7f;
+  box-shadow: 0 0 6px #00ff7f;
+  animation: scan-line 2s ease-in-out infinite;
+}
+
+@keyframes scan-line {
+  0% {
+    left: 0;
+    opacity: 1;
+  }
+
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+.badge-prodigy .badge-icon {
+  font-size: 12px;
+  filter: drop-shadow(0 0 4px #00ff7f);
+}
+
+.badge-prodigy .status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00ff7f;
+  box-shadow: 0 0 6px #00ff7f;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ============================
+   BADGE 6: Valedictorian — Sunrise Gradient
+============================ */
+.badge-valedictorian {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px 5px 8px;
+  border-radius: 100px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #ff6b35, #f7c59f, #ffcd00);
+  color: #3d1a00;
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.4);
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+}
+
+.badge-valedictorian::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg) translateX(-150%);
+  animation: gleam 2.8s ease-in-out infinite;
+}
+
+@keyframes gleam {
+  0% {
+    transform: skewX(-20deg) translateX(-150%);
+  }
+
+  60%,
+  100% {
+    transform: skewX(-20deg) translateX(300%);
+  }
+}
+
+.badge-valedictorian .badge-icon {
+  font-size: 13px;
+}
+
+/* ============================
+   BADGE 8: Magna Scholar — Rose Gold Elegant
+============================ */
+.badge-magna {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px 5px 9px;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #2a1215, #3d1a21);
+  border: 1px solid rgba(251, 113, 133, 0.5);
+  color: #fda4af;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 14px rgba(251, 113, 133, 0.2);
+}
+
+.badge-magna::after {
+  content: '';
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, rgba(251, 113, 133, 0.15) 0%, transparent 70%);
+  top: -20px;
+  right: -10px;
+  animation: magna-float 4s ease-in-out infinite;
+}
+
+@keyframes magna-float {
+
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: translateY(4px) scale(1.1);
+    opacity: 1;
+  }
+}
+
+.badge-magna .badge-icon {
+  font-size: 12px;
+  filter: drop-shadow(0 0 4px #fb7185);
+}
+
+.badge-magna .badge-stars {
+  display: flex;
+  gap: 2px;
+  font-size: 7px;
+  color: #fda4af;
+  opacity: 0.8;
+}
+
+
+/* ============================
+     BADGE 1: The Chairman — Obsidian Black + Steel
+  ============================ */
+.badge-chairman {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px 6px 10px;
+  border-radius: 5px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px;
+  letter-spacing: 2.5px;
+  background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+  border: 1px solid #3a3a3a;
+  color: #e2e2e2;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.badge-chairman::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #c0c0c0, #606060, #c0c0c0);
+}
+
+.badge-chairman .badge-icon {
+  font-size: 12px;
+  filter: grayscale(1) brightness(1.8);
+}
+
+.badge-chairman .rank-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 2px;
+}
+
+.badge-chairman .rank-lines span {
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, #888, #444);
+  border-radius: 1px;
+}
+
+.badge-chairman .rank-lines span:nth-child(1) {
+  width: 14px;
+}
+
+.badge-chairman .rank-lines span:nth-child(2) {
+  width: 10px;
+}
+
+.badge-chairman .rank-lines span:nth-child(3) {
+  width: 7px;
+}
+
+
+/* ============================
+     BADGE 2: Wolf of Wall St. — Crimson Red Aggression
+  ============================ */
+.badge-wolf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px 5px 9px;
+  border-radius: 4px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #1a0000, #2d0005);
+  border: 1px solid #7f1d1d;
+  color: #fca5a5;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 16px rgba(220, 38, 38, 0.25), inset 0 0 16px rgba(220, 38, 38, 0.04);
+}
+
+.badge-wolf::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(-45deg,
+      transparent,
+      transparent 8px,
+      rgba(220, 38, 38, 0.04) 8px,
+      rgba(220, 38, 38, 0.04) 9px);
+}
+
+.badge-wolf .ticker {
+  font-size: 8px;
+  color: #ef4444;
+  letter-spacing: 0;
+  font-family: 'Space Mono', monospace;
+  animation: ticker-blink 1.2s step-end infinite;
+}
+
+@keyframes ticker-blink {
+
+  0%,
+  100% {
+    opacity: 1
+  }
+
+  50% {
+    opacity: 0.3
+  }
+}
+
+.badge-wolf .badge-icon {
+  font-size: 12px;
+  filter: drop-shadow(0 0 4px #ef4444);
+}
+
+
+/* ============================
+     BADGE 3: Tycoon — Emerald Green Money
+  ============================ */
+.badge-tycoon {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px 5px 10px;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #001a0a, #002d12);
+  border: 1px solid #166534;
+  color: #86efac;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 18px rgba(22, 163, 74, 0.2);
+}
+
+.badge-tycoon::before {
+  content: '$';
+  position: absolute;
+  right: -4px;
+  top: -8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px;
+  color: rgba(134, 239, 172, 0.04);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.badge-tycoon .badge-icon {
+  font-size: 13px;
+  filter: drop-shadow(0 0 5px #22c55e);
+}
+
+.badge-tycoon .arrow {
+  font-size: 10px;
+  color: #4ade80;
+  animation: arrow-bounce 1.5s ease-in-out infinite;
+}
+
+@keyframes arrow-bounce {
+
+  0%,
+  100% {
+    transform: translateY(0)
+  }
+
+  50% {
+    transform: translateY(-2px)
+  }
+}
+
+
+/* ============================
+     BADGE 4: Board Member — Navy Pinstripe
+  ============================ */
+.badge-board {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px 5px 9px;
+  border-radius: 6px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #020818, #071035);
+  border: 1px solid #1e3a8a;
+  color: #bfdbfe;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(30, 58, 138, 0.3);
+}
+
+.badge-board::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg,
+      transparent,
+      transparent 12px,
+      rgba(59, 130, 246, 0.04) 12px,
+      rgba(59, 130, 246, 0.04) 13px);
+}
+
+.badge-board::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(147, 197, 253, 0.5), transparent);
+}
+
+.badge-board .badge-icon {
+  font-size: 12px;
+}
+
+.badge-board .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 6px #3b82f6;
+  flex-shrink: 0;
+}
+
+
+/* ============================
+     BADGE 5: The Closer — Amber Whiskey
+  ============================ */
+.badge-closer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 8px;
+  border-radius: 100px;
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #1c0900, #2e1400);
+  border: 1px solid #92400e;
+  color: #fcd34d;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 14px rgba(180, 83, 9, 0.3);
+}
+
+.badge-closer .flame {
+  font-size: 13px;
+  display: inline-block;
+  animation: flame-flicker 0.8s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 4px rgba(251, 146, 60, 0.8));
+  margin-right: -2px;
+  margin-left: 2px;
+}
+
+@keyframes flame-flicker {
+  0% {
+    transform: scale(1) rotate(-3deg);
+  }
+
+  100% {
+    transform: scale(1.1) rotate(3deg);
+  }
+}
+
+.badge-closer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.08), transparent);
+  transform: translateX(-100%);
+  animation: shimmer-warm 2.5s ease-in-out infinite 1s;
+}
+
+@keyframes shimmer-warm {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  60%,
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+
+/* ============================
+     BADGE 6: Venture Founder — Silicon Valley Neon
+  ============================ */
+.badge-founder {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px 5px 9px;
+  border-radius: 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: #060612;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  color: #c4b5fd;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.2), inset 0 0 20px rgba(139, 92, 246, 0.03);
+}
+
+.badge-founder::before {
+  content: '';
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  top: -40px;
+  right: -20px;
+  animation: orb-drift 4s ease-in-out infinite;
+}
+
+@keyframes orb-drift {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-5px, 5px);
+  }
+}
+
+.badge-founder .v-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  font-size: 9px;
+  font-weight: 700;
+  color: white;
+  font-family: 'Syne', sans-serif;
+  box-shadow: 0 0 8px rgba(124, 58, 237, 0.6);
+  flex-shrink: 0;
+}
+
+.badge-founder .slash {
+  color: rgba(196, 181, 253, 0.3);
+}
+
+
+/* ============================
+     BADGE 7: Mogul Status — Titanium Platinum
+  ============================ */
+.badge-mogul {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px 6px 10px;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #0f0f0f, #1c1c1c);
+  color: #d4d4d4;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+}
+
+.badge-mogul::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 100px;
+  padding: 1px;
+  background: linear-gradient(135deg, #a1a1a1, #3d3d3d, #ffffff, #4d4d4d, #a1a1a1);
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: platinum-shift 3s linear infinite;
+}
+
+@keyframes platinum-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.badge-mogul::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+  transform: translateX(-100%);
+  animation: shimmer-plat 3s ease-in-out infinite 0.5s;
+}
+
+@keyframes shimmer-plat {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  60%,
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.badge-mogul .crown {
+  font-size: 13px;
+  animation: crown-lift 3s ease-in-out infinite;
+  margin-left: -2px;
+}
+
+@keyframes crown-lift {
+
+  0%,
+  100% {
+    transform: translateY(0)
+  }
+
+  50% {
+    transform: translateY(-1.5px)
+  }
+}
+
+.badge-mogul .tier {
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #888;
+  font-family: 'Space Mono', monospace;
+}

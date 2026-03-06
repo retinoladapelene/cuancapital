@@ -1,0 +1,715 @@
+/* =========================================================================
+   PURE 2D ELITE AVATAR BORDERS
+   (Education & Business Professional System - No 3D, Border Focus)
+   ========================================================================= */
+
+/* Base Container - Ensures strict border confinement */
+.badge-avatar-pro {
+    position: relative;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    /* We don't want overflow visible for strictly border effects, 
+       but we might need a tiny bit of bleed for soft glows. 
+       We will keep it tight to prevent 3D/external visual clutter. */
+    overflow: visible;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    z-index: 1;
+}
+
+.badge-avatar-pro .badge-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    position: relative;
+    z-index: 10;
+    /* Clean base border, overridden by tiers */
+    border: 3px solid #1e293b;
+    background-color: #1e293b;
+}
+
+/* Common wrapper for border effects to sit EXACTLY on the border edge */
+.badge-avatar-pro .border-fx {
+    position: absolute;
+    inset: -4px;
+    /* Default border thickness area */
+    border-radius: 50%;
+    z-index: 5;
+    pointer-events: none;
+}
+
+
+/* =========================================
+   1. Bronze Crest — “Foundational Scholar”
+   Concept: Active learning indicator
+   Layers: 1 (CSS Keyframes)
+   Effects: Pulse + orbit light
+   ========================================= */
+.border-badge-bronze .badge-img {
+    border-color: #1e293b;
+    /* Dark base so the fx shows around it */
+}
+
+.border-badge-bronze .border-fx {
+    padding: 3px;
+    background: conic-gradient(from 0deg, #1e293b 0%, #8a5a19 15%, #cd7f32 25%, #8a5a19 35%, #1e293b 50%, #1e293b 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    border-radius: 50%;
+    animation: bronze-orbit 6s linear infinite, bronze-pulse 3s ease-in-out infinite;
+}
+
+@keyframes bronze-orbit {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes bronze-pulse {
+
+    0%,
+    100% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+        box-shadow: inset 0 0 5px rgba(205, 127, 50, 0.2);
+    }
+}
+
+
+/* =========================================
+   2. Silver Frame — “Analytical Mind”
+   Concept: AI scanner reading data
+   Layers: 2 (CSS Mask + Animation)
+   Effects: Scanning beam + shine sweep
+   ========================================= */
+.border-badge-silver .badge-img {
+    border-color: #1e293b;
+}
+
+/* Layer 1: Base metallic ring */
+.border-badge-silver::before {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, #475569, #94a3b8, #475569);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    z-index: 3;
+    pointer-events: none;
+}
+
+/* Layer 2: Scanner sweep */
+.border-badge-silver .border-fx {
+    inset: -3px;
+    padding: 3px;
+    background: conic-gradient(from 0deg, transparent 70%, rgba(255, 255, 255, 0.8) 95%, transparent 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: silver-scan 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    z-index: 4;
+}
+
+@keyframes silver-scan {
+    0% {
+        transform: rotate(0deg);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: rotate(360deg);
+        opacity: 0;
+    }
+}
+
+
+/* =========================================
+   3. Gold Aura — “Peak Performer”
+   Concept: Prestige without gaming flash
+   Layers: 3 (CSS + Canvas from JS)
+   Effects: Aura pulse + sparkle emit ONLY on border
+   ========================================= */
+.border-badge-gold .badge-img {
+    border-color: #1e293b;
+}
+
+/* Layer 1: Solid gold inner */
+.border-badge-gold::before {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(145deg, #b8860b, #ffd700, #b8860b);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    z-index: 3;
+}
+
+/* Layer 2: Soft aura pulse */
+.border-badge-gold .border-fx {
+    inset: -3px;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4), inset 0 0 5px rgba(255, 215, 0, 0.2);
+    animation: gold-pulse 4s ease-in-out infinite;
+}
+
+/* Layer 3: Particles container (Canvas injected by JS, bound to border) */
+.border-badge-gold .spark-layer {
+    position: absolute;
+    inset: -10px;
+    /* tightly bound to border */
+    border-radius: 50%;
+    z-index: 6;
+    pointer-events: none;
+    -webkit-mask-image: radial-gradient(circle, transparent 60%, black 65%, black 75%, transparent 80%);
+    mask-image: radial-gradient(circle, transparent 60%, black 65%, black 75%, transparent 80%);
+}
+
+@keyframes gold-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    }
+}
+
+
+/* =========================================
+   4. Platinum Edge — “Strategic Precision”
+   Concept: Neural network active / precision
+   Layers: 4 (SVG Stroke via JS)
+   Effects: Sequential light activation on segments
+   ========================================= */
+.border-badge-platinum .badge-img {
+    border-color: #1e293b;
+}
+
+/* Wait for JS to inject SVG layers. We just provide a base glow */
+.border-badge-platinum::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(229, 228, 226, 0.3);
+    z-index: 2;
+}
+
+.border-badge-platinum .svg-layer {
+    position: absolute;
+    inset: -6px;
+    /* slightly outside image */
+    z-index: 5;
+    pointer-events: none;
+    width: calc(100% + 12px);
+    height: calc(100% + 12px);
+}
+
+
+/* =========================================
+   5. Diamond Halo — “Executive Authority”
+   Concept: Crystal glints randomly in office light
+   Layers: 5 (CSS + Random JS flares)
+   Effects: Random light flare + shimmer on strictly border
+   ========================================= */
+.border-badge-diamond .badge-img {
+    border-color: #1e293b;
+}
+
+/* Base icy ring */
+.border-badge-diamond::before {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, #b9f2ff, #ffffff, #87cefa, #ffffff);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    z-index: 3;
+    animation: diamond-base-spin 10s linear infinite;
+}
+
+/* JS will inject flare elements within .border-fx */
+.border-badge-diamond .border-fx {
+    inset: -6px;
+    /* Area for flares */
+    border-radius: 50%;
+}
+
+.diamond-flare {
+    position: absolute;
+    width: 2px;
+    height: 15px;
+    background: #fff;
+    box-shadow: 0 0 8px 1px #b9f2ff;
+    border-radius: 50%;
+    opacity: 0;
+    transform-origin: center;
+    top: 50%;
+    left: 50%;
+}
+
+@keyframes diamond-base-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes flare-blink {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) rotate(var(--rot)) scaleY(0.5);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) rotate(var(--rot)) scaleY(1.5);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) rotate(var(--rot)) scaleY(0.5);
+    }
+}
+
+
+/* =========================================
+   6. Mythic Resonance — “Mastermind Architect”
+   Concept: Intellectual energy field
+   Layers: 6 (Multi-animation sync via CSS + JS SVG filters)
+   Effects: Flowing energy, harmonic pulse, color shift
+   ========================================= */
+.border-badge-mythic .badge-img {
+    border-color: #1e293b;
+}
+
+/* Layer 1: Base dark gradient */
+.border-badge-mythic::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    padding: 4px;
+    background: linear-gradient(var(--mythic-angle, 0deg), #4b0082, #00ced1, #4b0082);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    z-index: 3;
+    animation: mythic-color-shift 8s ease-in-out infinite alternate;
+}
+
+/* Layer 2: Harmonic wave ring */
+.border-badge-mythic::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    padding: 4px;
+    background: conic-gradient(from 0deg, transparent 0%, rgba(0, 255, 200, 0.6) 20%, transparent 40%, rgba(138, 43, 226, 0.6) 60%, transparent 80%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    z-index: 4;
+    animation: mythic-wave-spin 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+    mix-blend-mode: screen;
+}
+
+/* Layer 3: The breathing energy field (injected via JS or pure CSS) */
+.border-badge-mythic .border-fx {
+    inset: -6px;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(75, 0, 130, 0.5), inset 0 0 10px rgba(0, 206, 209, 0.3);
+    animation: mythic-breathe 4s ease-in-out infinite;
+    z-index: 2;
+}
+
+@keyframes mythic-color-shift {
+    0% {
+        filter: hue-rotate(0deg);
+    }
+
+    100% {
+        filter: hue-rotate(60deg);
+    }
+}
+
+@keyframes mythic-wave-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes mythic-breathe {
+
+    0%,
+    100% {
+        transform: scale(0.98);
+        opacity: 0.8;
+        box-shadow: 0 0 8px rgba(75, 0, 130, 0.4);
+    }
+
+    50% {
+        transform: scale(1.02);
+        opacity: 1;
+        box-shadow: 0 0 15px rgba(0, 206, 209, 0.7);
+    }
+}
+
+/* ==========================================================================
+   EDUCATIONAL BADGE PILLS  Premium styled inline badges
+   Applied to <span class="badge-{name}"> inside the badge modal cards
+   and in the hero profile name area when an educational badge is equipped.
+   ========================================================================== */
+
+/* 01  Supreme Cuan  Gold Luxury Glow (upgraded original) */
+.badge-supreme {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px 4px 7px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #1a0a00, #3d1f00);
+    border: 1px solid #c97d10;
+    color: #ffd166;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    box-shadow: 0 0 12px rgba(255, 185, 0, 0.25), inset 0 1px 0 rgba(255, 220, 100, 0.1);
+    animation: badge-supreme-pulse 3s ease-in-out infinite;
+    white-space: nowrap;
+}
+
+.badge-supreme::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 210, 80, 0.12) 50%, transparent 100%);
+    transform: translateX(-100%);
+    animation: badge-shimmer 2.5s ease-in-out infinite;
+}
+
+@keyframes badge-supreme-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 12px rgba(255, 185, 0, 0.25), inset 0 1px 0 rgba(255, 220, 100, 0.1);
+    }
+
+    50% {
+        box-shadow: 0 0 22px rgba(255, 185, 0, 0.5), 0 0 40px rgba(255, 185, 0, 0.15), inset 0 1px 0 rgba(255, 220, 100, 0.2);
+    }
+}
+
+@keyframes badge-shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    60%,
+    100% {
+        transform: translateX(200%);
+    }
+}
+
+/* 02  Scholar Elite  Deep Navy + Stars */
+.badge-scholar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px 4px 8px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #0a0e2a, #1a2060);
+    border: 1px solid #4a5ff7;
+    color: #a5b4ff;
+    box-shadow: 0 0 16px rgba(74, 95, 247, 0.3);
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.badge-scholar::after {
+    content: '  ';
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 6px;
+    color: rgba(165, 180, 255, 0.3);
+    letter-spacing: 3px;
+    animation: badge-stars-slide 3s linear infinite;
+}
+
+@keyframes badge-stars-slide {
+    0% {
+        right: 100%;
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        right: -30px;
+        opacity: 0;
+    }
+}
+
+/* 03  Grand Master  Dark Purple Holographic */
+.badge-grandmaster {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px 4px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    background: linear-gradient(135deg, #1a0428, #2d0a50);
+    border: 1px solid transparent;
+    color: #e879f9;
+    position: relative;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.35), inset 0 0 20px rgba(168, 85, 247, 0.05);
+    white-space: nowrap;
+}
+
+.badge-grandmaster::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #9333ea, #c026d3, #7c3aed, #9333ea);
+    background-size: 300% 300%;
+    z-index: -1;
+    animation: badge-holo-rotate 3s linear infinite;
+}
+
+@keyframes badge-holo-rotate {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* 04  Summa Cum Laude  Cream + Gold Academic */
+.badge-summa {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2a1f00, #3d2c00);
+    border-top: 2px solid #d4a843;
+    border-bottom: 2px solid #d4a843;
+    border-left: 1px solid #8a6a1a;
+    border-right: 1px solid #8a6a1a;
+    color: #f5d98a;
+    box-shadow: 0 2px 12px rgba(212, 168, 67, 0.2);
+    white-space: nowrap;
+}
+
+/* 05  Prodigy  Neon Green Cyber */
+.badge-prodigy {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: #020f02;
+    border: 1px solid #00ff7f;
+    color: #00ff7f;
+    box-shadow: 0 0 8px rgba(0, 255, 127, 0.3), inset 0 0 8px rgba(0, 255, 127, 0.05);
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.badge-prodigy::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #00ff7f;
+    box-shadow: 0 0 6px #00ff7f;
+    animation: badge-scan-line 2s ease-in-out infinite;
+}
+
+@keyframes badge-scan-line {
+    0% {
+        left: 0;
+        opacity: 1;
+    }
+
+    100% {
+        left: 100%;
+        opacity: 0;
+    }
+}
+
+.badge-prodigy .status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #00ff7f;
+    box-shadow: 0 0 6px #00ff7f;
+    animation: badge-blink 1s step-end infinite;
+    display: inline-block;
+}
+
+@keyframes badge-blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+/* 06  Valedictorian  Sunrise Gradient */
+.badge-valedictorian {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px 4px 7px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #ff6b35, #f7c59f, #ffcd00);
+    color: #3d1a00;
+    box-shadow: 0 4px 16px rgba(255, 107, 53, 0.4);
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.badge-valedictorian::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    transform: skewX(-20deg) translateX(-150%);
+    animation: badge-gleam 2.8s ease-in-out infinite;
+}
+
+@keyframes badge-gleam {
+    0% {
+        transform: skewX(-20deg) translateX(-150%);
+    }
+
+    60%,
+    100% {
+        transform: skewX(-20deg) translateX(300%);
+    }
+}
+
+
+/* 08  Magna Scholar  Rose Gold Elegant */
+.badge-magna {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 13px 4px 8px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #2a1215, #3d1a21);
+    border: 1px solid rgba(251, 113, 133, 0.5);
+    color: #fda4af;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 14px rgba(251, 113, 133, 0.2);
+    white-space: nowrap;
+}
+
+.badge-magna::after {
+    content: '';
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, rgba(251, 113, 133, 0.15) 0%, transparent 70%);
+    top: -20px;
+    right: -10px;
+    animation: badge-magna-float 4s ease-in-out infinite;
+}
+
+@keyframes badge-magna-float {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: .8;
+    }
+
+    50% {
+        transform: translateY(4px) scale(1.1);
+        opacity: 1;
+    }
+}
+
+.badge-magna .stars {
+    display: inline-flex;
+    gap: 2px;
+    font-size: 7px;
+    color: #fda4af;
+    opacity: 0.8;
+}

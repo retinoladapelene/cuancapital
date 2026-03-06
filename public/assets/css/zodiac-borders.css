@@ -1,0 +1,203 @@
+/* public/assets/css/zodiac-borders.css */
+/* CuanCapital Experience OS: Zodiac Avatar Borders */
+
+.zodiac-aw {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 170px;
+    height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: center center;
+    /* Will be translated to center via style: transform: translate(-50%, -50%) scale(X) */
+    pointer-events: none;
+    z-index: 10;
+}
+
+.zodiac-aw svg.animal {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.zodiac-aw svg.zodiac-ring {
+    position: absolute;
+    z-index: 6;
+    pointer-events: none;
+}
+
+.zodiac-aw svg.bg-ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Base Zodiac Core glow */
+.zodiac-core-shadow {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ANIMATIONS */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spin-r {
+    to {
+        transform: rotate(-360deg);
+    }
+}
+
+@keyframes orbit {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse-fire {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px 6px rgba(220, 60, 30, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 40px 15px rgba(255, 120, 50, 0.7);
+    }
+}
+
+/* Auto-generate unique pulse glows from JS dynamic inline styles if preferred, 
+   but since JS creates a <style> tag, we'll let JS handle specific pulse-glow keyframes 
+   or we can define them here to keep it cleaner. */
+
+@keyframes pulse-glow-aries {
+
+    0%,
+    100% {
+        box-shadow: 0 0 25px 8px rgba(232, 48, 32, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 45px 18px rgba(232, 48, 32, 0.6);
+    }
+}
+
+@keyframes pulse-glow-taurus {
+
+    0%,
+    100% {
+        box-shadow: 0 0 25px 8px rgba(42, 138, 80, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 45px 18px rgba(42, 138, 80, 0.6);
+    }
+}
+
+@keyframes pulse-glow-gemini {
+
+    0%,
+    100% {
+        box-shadow: 0 0 25px 8px rgba(180, 160, 40, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 45px 18px rgba(180, 160, 40, 0.5);
+    }
+}
+
+@keyframes pulse-glow-cancer {
+
+    0%,
+    100% {
+        box-shadow: 0 0 25px 8px rgba(80, 144, 208, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 45px 18px rgba(80, 144, 208, 0.6);
+    }
+}
+
+@keyframes pulse-glow-leo {
+
+    0%,
+    100% {
+        box-shadow: 0 0 25px 8px rgba(240, 160, 32, 0.7);
+    }
+
+    50% {
+        box-shadow: 0 0 45px 18px rgba(240, 160, 32, 0.7);
+    }
+}
+
+@keyframes pulse-glow-virgo {
+
+    0%,
+    100% {
+        box-shadow: 0 0 25px 8px rgba(100, 170, 60, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 45px 18px rgba(100, 170, 60, 0.5);
+    }
+}
+
+@keyframes pulse-glow-scorpio {
+
+    0%,
+    100% {
+        box-shadow: 0 0 25px 8px rgba(176, 16, 96, 0.7);
+    }
+
+    50% {
+        box-shadow: 0 0 45px 18px rgba(176, 16, 96, 0.7);
+    }
+}
+
+@keyframes pulse-glow-sagittarius {
+
+    0%,
+    100% {
+        box-shadow: 0 0 25px 8px rgba(112, 64, 224, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 45px 18px rgba(112, 64, 224, 0.6);
+    }
+}
+
+@keyframes pulse-glow-capricorn {
+
+    0%,
+    100% {
+        box-shadow: 0 0 25px 8px rgba(32, 128, 144, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 45px 18px rgba(32, 128, 144, 0.6);
+    }
+}
+
+@keyframes pulse-glow-aquarius {
+
+    0%,
+    100% {
+        box-shadow: 0 0 25px 8px rgba(16, 96, 208, 0.7);
+    }
+
+    50% {
+        box-shadow: 0 0 45px 18px rgba(16, 96, 208, 0.7);
+    }
+}

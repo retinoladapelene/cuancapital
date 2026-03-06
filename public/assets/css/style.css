@@ -1,0 +1,961 @@
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.dark {
+    color-scheme: dark;
+}
+
+#calculator-section,
+.calculator-container {
+    contain: layout style paint;
+    content-visibility: auto;
+
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    max-height: 400px;
+
+    contain: layout paint;
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    background: transparent;
+    cursor: pointer;
+
+    will-change: transform;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    background: #334155;
+    border-radius: 4px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #10b981;
+    margin-top: -6px;
+
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+
+    border: 2px solid white;
+
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+input[type=range]:active::-webkit-slider-thumb {
+    box-shadow: none;
+    transform: scale(1.1) translateZ(0);
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #10b981 #10b981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2), 0 0 20px rgba(16, 185, 129, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.strategy-card {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+.strategy-card:hover {
+    transform: translateY(-5px) translateZ(0);
+}
+
+.details-section {
+    display: none;
+    overflow: hidden;
+
+}
+
+.details-section.open {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.driver-popover.driverjs-theme {
+    background-color: #f8fafc;
+    color: #0f172a;
+    border-radius: 20px;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    font-family: 'Space Grotesk', sans-serif;
+    padding: 24px;
+    max-width: 320px;
+    border: 1px solid #e2e8f0;
+}
+
+.dark .driver-popover.driverjs-theme {
+    background-color: #1e293b;
+    color: #f1f5f9;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+}
+
+.driver-popover.driverjs-theme .driver-popover-title {
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: #10b981;
+
+    margin-bottom: 0.75rem;
+    line-height: 1.3;
+}
+
+.driver-popover.driverjs-theme .driver-popover-description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #475569;
+    margin-bottom: 1.5rem;
+}
+
+.dark .driver-popover.driverjs-theme .driver-popover-description {
+    color: #94a3b8;
+}
+
+.driver-popover.driverjs-theme .driver-popover-footer {
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.driver-popover.driverjs-theme .driver-popover-progress-text {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 600;
+    margin-right: 12px;
+    white-space: nowrap;
+}
+
+.driver-popover.driverjs-theme button {
+    flex: 0 1 auto;
+
+    text-align: center;
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    text-shadow: none;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.driver-popover.driverjs-theme button:hover {
+    background-color: #e2e8f0;
+    color: #1e293b;
+}
+
+.dark .driver-popover.driverjs-theme button {
+    background-color: #334155;
+    color: #e2e8f0;
+    border-color: #475569;
+}
+
+.dark .driver-popover.driverjs-theme button:hover {
+    background-color: #475569;
+    color: #fff;
+}
+
+.driver-popover.driverjs-theme button.driver-popover-next-btn {
+    background-color: #10b981;
+    color: #ffffff;
+    border: none;
+}
+
+.driver-popover.driverjs-theme button.driver-popover-next-btn:hover {
+    background-color: #059669;
+}
+
+.driver-popover.driverjs-theme .driver-popover-navigation-btns {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+
+}
+
+.driver-popover.driverjs-theme .driver-popover-close-btn {
+
+    position: absolute;
+    top: -16px;
+    right: -16px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    transition: none;
+    z-index: 10;
+    color: #ef4444;
+    font-size: 36px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.driver-popover.driverjs-theme .driver-popover-close-btn:hover {
+    color: #ef4444;
+}
+
+.dark .driver-popover.driverjs-theme .driver-popover-close-btn {
+    color: #f87171;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.dark .driver-popover.driverjs-theme .driver-popover-close-btn:hover {
+    color: #f87171;
+}
+
+.driver-popover.driverjs-theme .driver-popover-arrow-side-left.driver-popover-arrow {
+    border-left-color: #f8fafc;
+}
+
+.dark .driver-popover.driverjs-theme .driver-popover-arrow-side-left.driver-popover-arrow {
+    border-left-color: #1e293b;
+}
+
+.driver-popover.driverjs-theme .driver-popover-arrow-side-right.driver-popover-arrow {
+    border-right-color: #f8fafc;
+}
+
+.dark .driver-popover.driverjs-theme .driver-popover-arrow-side-right.driver-popover-arrow {
+    border-right-color: #1e293b;
+}
+
+.driver-popover.driverjs-theme .driver-popover-arrow-side-top.driver-popover-arrow {
+    border-top-color: #f8fafc;
+}
+
+.dark .driver-popover.driverjs-theme .driver-popover-arrow-side-top.driver-popover-arrow {
+    border-top-color: #1e293b;
+}
+
+.driver-popover.driverjs-theme .driver-popover-arrow-side-bottom.driver-popover-arrow {
+    border-bottom-color: #f8fafc;
+}
+
+
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+.animate-shake {
+    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+@media (max-width: 768px) {
+    * {
+
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+        box-shadow: none !important;
+
+        border: 2px solid white;
+    }
+
+    .strategy-card:hover {
+        transform: none;
+
+    }
+
+
+}
+
+.theme-transitioning,
+.theme-transitioning body {
+    transition: background-color 0.5s ease, color 0.5s ease !important;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.5s;
+    mix-blend-mode: normal;
+}
+
+.theme-transitioning,
+.theme-transitioning body,
+.theme-transitioning .strategy-card,
+.theme-transitioning .calculator-container,
+.theme-transitioning nav,
+.theme-transitioning footer,
+.theme-transitioning input,
+.theme-transitioning button {
+    transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition-delay: 0s !important;
+}
+
+.theme-transitioning *,
+.theme-transitioning ::before,
+.theme-transitioning ::after {
+
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    transition-property: background-color, border-color, color !important;
+}
+
+.roadmap-card,
+.strategy-card,
+#calculator-section,
+#goal-planner {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .roadmap-card,
+.dark .strategy-card,
+.dark #calculator-section,
+.dark #goal-planner {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+select:focus {
+    border-color: #10b981 !important;
+    box-shadow:
+        0 0 0 4px rgba(16, 185, 129, 0.25),
+        0 0 15px rgba(16, 185, 129, 0.1) !important;
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: rgba(6, 78, 59, 0.05);
+
+    will-change: box-shadow, border-color;
+
+}
+
+.dark input[type="number"]:focus,
+.dark input[type="text"]:focus,
+.dark select:focus {
+    background-color: rgba(6, 78, 59, 0.3);
+
+}
+
+#backToTop {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4), 0 4px 6px -2px rgba(16, 185, 129, 0.2);
+    cursor: pointer;
+    z-index: 999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#backToTop.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+#backToTop:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.5), 0 10px 10px -5px rgba(16, 185, 129, 0.3);
+}
+
+#backToTop:active {
+    transform: scale(0.95);
+}
+
+button,
+.btn,
+input,
+select,
+a,
+.strategy-card,
+.driver-popover {
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+.roadmap-card.locked {
+    opacity: 0.5;
+    filter: grayscale(80%);
+    pointer-events: none;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.roadmap-card.locked::before {
+    content: '\f023';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    color: rgba(148, 163, 184, 0.5);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.dark .roadmap-card.locked::before {
+    color: rgba(71, 85, 105, 0.5);
+}
+
+.roadmap-step[data-unlocked="true"] .roadmap-card {
+    animation: pulseUnlock 2s ease-in-out infinite;
+}
+
+@keyframes pulseUnlock {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.2);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* Custom Animations for Reverse Goal Planner */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LIGHT MODE OVERRIDES — Sections hardcoded dark without dark: prefix
+   Uses html:not(.dark) for clean theming without JS
+═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Hero Control Panel Card ────────────────────────────────────── */
+html:not(.dark) #hero .z-20 section {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08) !important;
+}
+
+html:not(.dark) #hero .z-20 section h1,
+html:not(.dark) #hero .z-20 section h2 {
+    color: #0f172a !important;
+}
+
+html:not(.dark) #hero .z-20 section h1 span[class*="text-transparent"] {
+    color: unset !important;
+    /* keep gradient text */
+}
+
+html:not(.dark) #hero .z-20 section>div p,
+html:not(.dark) #hero .z-20 section>div>div[role]+div p {
+    color: #475569 !important;
+}
+
+html:not(.dark) #hero .z-20 section [class*="border-slate-8"] {
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #hero .z-20 section button[class*="border-slate-6"] {
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+    background-color: transparent !important;
+}
+
+html:not(.dark) #hero .z-20 section button[class*="border-slate-6"]:hover {
+    background-color: #f1f5f9 !important;
+}
+
+html:not(.dark) #hero .z-20 section [class*="text-slate-300"] {
+    color: #475569 !important;
+}
+
+html:not(.dark) #hero .z-20 section [class*="text-slate-400"] {
+    color: #64748b !important;
+}
+
+html:not(.dark) #hero .z-20 section [class*="text-slate-500"] {
+    color: #94a3b8 !important;
+}
+
+html:not(.dark) #hero .z-20 section [class*="text-white"]:not(span[class*="text-emerald"]):not(span[class*="text-transparent"]):not(button[class*="from-emerald"]):not(button[class*="bg-gradient"]) {
+    color: #0f172a !important;
+}
+
+html:not(.dark) #hero .z-20 section [class*="bg-emerald-500\/10"] {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+
+/* ── 2. Goal Planner (#goal-planner) ──────────────────────────────── */
+html:not(.dark) #goal-planner>.relative {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.07) !important;
+}
+
+html:not(.dark) #goal-planner h3 {
+    color: #0f172a !important;
+}
+
+html:not(.dark) #goal-planner h3 span[class*="text-transparent"] {
+    color: unset !important;
+}
+
+html:not(.dark) #goal-planner p:not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-violet"]) {
+    color: #475569 !important;
+}
+
+/* Model cards */
+html:not(.dark) #goal-planner .rgp-model-card {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Preset buttons */
+html:not(.dark) #goal-planner .rgp-preset-btn {
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+
+/* Inputs */
+html:not(.dark) #goal-planner input[type="number"],
+html:not(.dark) #goal-planner input[type="text"],
+html:not(.dark) #goal-planner select {
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+html:not(.dark) #goal-planner input::placeholder {
+    color: #94a3b8 !important;
+}
+
+/* Advanced panel */
+html:not(.dark) #goal-planner [class*="bg-slate-800\/50"] {
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Live preview stat boxes */
+html:not(.dark) #goal-planner [class*="bg-slate-900\/60"],
+html:not(.dark) #goal-planner [class*="bg-slate-800\/60"] {
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #goal-planner [class*="text-white"] {
+    color: #0f172a !important;
+}
+
+html:not(.dark) #goal-planner [class*="text-slate-2"] {
+    color: #334155 !important;
+}
+
+html:not(.dark) #goal-planner [class*="text-slate-3"] {
+    color: #475569 !important;
+}
+
+html:not(.dark) #goal-planner [class*="text-slate-4"] {
+    color: #64748b !important;
+}
+
+html:not(.dark) #goal-planner [class*="text-slate-5"] {
+    color: #94a3b8 !important;
+}
+
+html:not(.dark) #goal-planner [class*="text-slate-6"] {
+    color: #94a3b8 !important;
+}
+
+html:not(.dark) #goal-planner [class*="border-slate-7"],
+html:not(.dark) #goal-planner [class*="border-slate-8"] {
+    border-color: #e2e8f0 !important;
+}
+
+/* Scorecard boxes */
+html:not(.dark) #goal-planner #rp-results [class*="bg-slate-8"] {
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+}
+
+
+/* ── Wizard/Chip Exception: Active (emerald) chips must keep white text ───── */
+/* The generic [class*="text-white"] override must NOT apply to buttons/chips
+   that are intentionally emerald-green with white text for selection state. */
+html:not(.dark) #business-simulation-lab .bg-emerald-500,
+html:not(.dark) #business-simulation-lab [class*="bg-emerald-5"] {
+    color: #ffffff !important;
+    /* keep white text on emerald bg */
+}
+
+html:not(.dark) #business-simulation-lab .wizard-chip-select {
+    background-color: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+html:not(.dark) #business-simulation-lab .wizard-chip-select.active,
+html:not(.dark) #business-simulation-lab .wizard-chip-select.bg-emerald-500 {
+    background-color: #10b981 !important;
+    /* emerald-500 */
+    border-color: #059669 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.30) !important;
+}
+
+/* Primary/gradient buttons must NOT be overridden */
+html:not(.dark) #business-simulation-lab button[class*="from-emerald"],
+html:not(.dark) #business-simulation-lab button[class*="bg-emerald-6"],
+html:not(.dark) #business-simulation-lab button[class*="bg-gradient"] {
+    color: inherit !important;
+    background-color: unset !important;
+}
+
+
+/* ── 3. Phase 2 — Profit Simulator (#profit-simulator-section) ─────── */
+html:not(.dark) #profit-simulator-section {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 60%, #f0fdf4 100%) !important;
+}
+
+html:not(.dark) #profit-simulator-section h2 {
+    color: #0f172a !important;
+}
+
+html:not(.dark) #profit-simulator-section h2 span[class*="text-transparent"] {
+    color: unset !important;
+}
+
+html:not(.dark) #profit-simulator-section [class*="text-white"] {
+    color: #0f172a !important;
+}
+
+html:not(.dark) #profit-simulator-section [class*="text-slate-3"] {
+    color: #475569 !important;
+}
+
+html:not(.dark) #profit-simulator-section [class*="text-slate-4"] {
+    color: #64748b !important;
+}
+
+html:not(.dark) #profit-simulator-section [class*="text-slate-5"] {
+    color: #94a3b8 !important;
+}
+
+/* Zone cards */
+html:not(.dark) #profit-simulator-section .zone-card {
+    background-color: rgba(255, 255, 255, 0.85) !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #profit-simulator-section .zone-card.active-zone {
+    border-color: currentColor !important;
+}
+
+/* Level buttons inside zone cards */
+html:not(.dark) #profit-simulator-section .level-btn {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #profit-simulator-section .level-btn span[class*="text-slate-3"] {
+    color: #0f172a !important;
+}
+
+/* Default state panel */
+html:not(.dark) #ps-default-state {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #ps-default-state [class*="bg-slate-7"] {
+    background-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #ps-default-state p {
+    color: #475569 !important;
+}
+
+/* Simulation result card */
+html:not(.dark) #simulation-result {
+    background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #simulation-result [class*="text-white"] {
+    color: #0f172a !important;
+}
+
+html:not(.dark) #simulation-result [class*="text-slate-3"],
+html:not(.dark) #simulation-result [class*="text-slate-4"],
+html:not(.dark) #simulation-result [class*="text-slate-5"] {
+    color: #64748b !important;
+}
+
+html:not(.dark) #simulation-result [class*="border-white\/5"] {
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #simulation-result [class*="bg-white\/"] {
+    background-color: rgba(15, 23, 42, 0.04) !important;
+}
+
+
+/* ── 4. Business Simulation Lab Wizard Panel ───────────────────────── */
+html:not(.dark) #business-simulation-lab .lg\:col-span-4[class*="bg-slate-9"] {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06) !important;
+}
+
+html:not(.dark) #business-simulation-lab [class*="bg-slate-8"],
+html:not(.dark) #business-simulation-lab [class*="bg-slate-9"]:not(section) {
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #business-simulation-lab [class*="text-white"] {
+    color: #0f172a !important;
+}
+
+html:not(.dark) #business-simulation-lab [class*="text-slate-3"] {
+    color: #475569 !important;
+}
+
+html:not(.dark) #business-simulation-lab [class*="text-slate-4"] {
+    color: #64748b !important;
+}
+
+html:not(.dark) #business-simulation-lab [class*="text-slate-5"] {
+    color: #94a3b8 !important;
+}
+
+html:not(.dark) #business-simulation-lab [class*="border-slate-7"],
+html:not(.dark) #business-simulation-lab [class*="border-slate-8"] {
+    border-color: #e2e8f0 !important;
+}
+
+/* Output panel (Strategic DNA area) */
+html:not(.dark) #business-simulation-lab .lg\:col-span-8 [class*="bg-slate-9"],
+html:not(.dark) #business-simulation-lab .lg\:col-span-8 [class*="bg-slate-8"] {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #business-simulation-lab .lg\:col-span-8 [class*="text-white"] {
+    color: #0f172a !important;
+}
+
+html:not(.dark) #business-simulation-lab .lg\:col-span-8 [class*="text-slate-3"],
+html:not(.dark) #business-simulation-lab .lg\:col-span-8 [class*="text-slate-4"] {
+    color: #64748b !important;
+}
+
+
+/* ── 5. Strategic DNA Output (#mentor-dashboard, JS-generated) ────────────── */
+
+/* The Dynamic Strategy Header uses bg-gradient-to-br from-slate-900 to-slate-800.
+   background-image (gradient) takes precedence over background-color, so we must
+   explicitly remove it to theme the card in light mode. */
+html:not(.dark) #mentor-dashboard [class*="from-slate-9"][class*="text-white"] {
+    background-image: none !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Heading & main body text */
+html:not(.dark) #mentor-dashboard [class*="from-slate-9"] h2 {
+    color: #0f172a !important;
+}
+
+html:not(.dark) #mentor-dashboard [class*="from-slate-9"] p {
+    color: #475569 !important;
+}
+
+/* Keep colored score numbers unchanged; only reset generic white/slate text */
+html:not(.dark) #mentor-dashboard [class*="from-slate-9"] .text-white {
+    color: #0f172a !important;
+}
+
+html:not(.dark) #mentor-dashboard [class*="from-slate-9"] [class*="text-slate-3"] {
+    color: #475569 !important;
+}
+
+html:not(.dark) #mentor-dashboard [class*="from-slate-9"] [class*="text-slate-4"] {
+    color: #64748b !important;
+}
+
+/* "Strategic DNA" badge pill (bg-white/10 border-white/20) */
+html:not(.dark) #mentor-dashboard [class*="from-slate-9"] [class*="bg-white/1"] {
+    background-color: rgba(15, 23, 42, 0.06) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    color: #0f172a !important;
+}
+
+/* Metric score cards: bg-white/5, border-white/10 — transparent on dark, flat on light */
+html:not(.dark) #mentor-dashboard [class*="bg-white/5"] {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07) !important;
+}
+
+html:not(.dark) #mentor-dashboard [class*="bg-white/0"] {
+    background-color: rgba(15, 23, 42, 0.03) !important;
+}
+
+/* Progress bar track inside metric cards */
+html:not(.dark) #mentor-dashboard .bg-slate-800 {
+    background-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #mentor-dashboard [class*="border-white/1"] {
+    border-color: #e2e8f0 !important;
+}
+
+/* Icon background circles inside metric cards */
+
+
+/* General text fallback inside the whole dashboard area */
+html:not(.dark) #mentor-dashboard [class*="text-slate-3"] {
+    color: #475569 !important;
+}
+
+html:not(.dark) #mentor-dashboard [class*="text-slate-4"] {
+    color: #64748b !important;
+}
+
+html:not(.dark) #mentor-dashboard [class*="text-slate-5"] {
+    color: #94a3b8 !important;
+}
+
+html:not(.dark) #mentor-dashboard [class*="text-white"]:not([class*="text-emerald"]):not([class*="text-amber"]):not([class*="text-rose"]):not([class*="text-blue"]):not([class*="text-purple"]) {
+    color: #0f172a !important;
+}
