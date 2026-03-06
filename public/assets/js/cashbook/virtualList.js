@@ -109,19 +109,23 @@ window.VirtualList = class VirtualList {
         for (let i = startIndex; i < endIndex; i++) {
             newKeys.add(i);
             if (!this.renderedNodes.has(i)) {
+                let wrapper;
+                // DOM Object Pooling: Reuse old nodes if available
+                if (this.nodePool.length > 0) {
+                    wrapper = this.nodePool.pop();
+                } else {
+                    wrapper = document.createElement('div');
+                    wrapper.style.position = 'absolute';
+                    wrapper.style.width = '100%';
+                    // REMOVED will-change: transform per item to save massive amounts of mobile GPU VRAM
+                }
+
                 const nodeStr = this.renderItem(this.items[i], i);
-                const temp = document.createElement('template');
-                temp.innerHTML = nodeStr.trim();
-                const el = temp.content.firstChild;
+                wrapper.innerHTML = nodeStr.trim();
+                wrapper.style.transform = `translateY(${this.itemPositions[i].y}px) translateZ(0)`;
 
-                el.style.position = 'absolute';
-                // Use transform instead of top/left for GPU acceleration where possible
-                el.style.transform = `translateY(${this.itemPositions[i].y}px) translateZ(0)`;
-                el.style.willChange = 'transform';
-                el.style.width = '100%';
-
-                fragment.appendChild(el);
-                this.renderedNodes.set(i, el);
+                fragment.appendChild(wrapper);
+                this.renderedNodes.set(i, wrapper);
             }
         }
 
@@ -129,10 +133,11 @@ window.VirtualList = class VirtualList {
             this.scrollPad.appendChild(fragment);
         }
 
-        // Cleanup out-of-bounds nodes
+        // Cleanup out-of-bounds nodes & recycle them
         for (const [i, el] of this.renderedNodes.entries()) {
             if (!newKeys.has(i)) {
-                this.scrollPad.removeChild(el);
+                if (el.parentNode) el.parentNode.removeChild(el);
+                this.nodePool.push(el); // Send back to the pool
                 this.renderedNodes.delete(i);
             }
         }
@@ -145,5 +150,6 @@ window.VirtualList = class VirtualList {
         this.scrollParent.removeEventListener('resize', this.onResize);
         this.container.innerHTML = '';
         this.renderedNodes.clear();
+        this.nodePool = [];
     }
 };

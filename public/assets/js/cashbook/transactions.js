@@ -211,9 +211,14 @@ function renderTxTab() {
         return;
     }
 
-    tbody.innerHTML = '';
+    // Pre-calculate daily aggregates O(N) instead of O(N^2)
+    const dailyNets = {};
+    filtered.forEach(tx => {
+        const dKey = tx.transaction_date.slice(0, 10);
+        if (tx.type === 'income') dailyNets[dKey] = (dailyNets[dKey] || 0) + parseFloat(tx.amount || 0);
+        else if (tx.type === 'expense') dailyNets[dKey] = (dailyNets[dKey] || 0) - parseFloat(tx.amount || 0);
+    });
 
-    // Virtual List Implementation
     let flatItems = [];
     let lastDateKey = null;
 
@@ -223,19 +228,11 @@ function renderTxTab() {
 
         if (dKey !== lastDateKey) {
             lastDateKey = dKey;
-            let dayNet = 0;
-            // Calculate dayNet just for this day
-            filtered.forEach(t => {
-                if (t.transaction_date.startsWith(dKey)) {
-                    if (t.type === 'income') dayNet += parseFloat(t.amount || 0);
-                    if (t.type === 'expense') dayNet -= parseFloat(t.amount || 0);
-                }
-            });
             flatItems.push({
                 type: 'header',
                 dateStr: dKey,
                 dateObj: dObj,
-                dayNet: dayNet
+                dayNet: dailyNets[dKey] || 0
             });
         }
         flatItems.push({ type: 'row', tx: tx });
