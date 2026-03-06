@@ -1,6 +1,6 @@
 /**
- * Business Manager — dashboard.js
- * KPI Cards, Sparkline, Top Products, Quick Actions, Intelligence widgets
+ * Business Manager — dashboard.js (Phase 13: Global Command Dashboard)
+ * Mission Control: 4-Zone Responsive BI Dashboard
  */
 
 async function bizLoadDashboard() {
@@ -9,237 +9,260 @@ async function bizLoadDashboard() {
 
     const bizId = window.bizState.businessId;
 
-    container.innerHTML = `<div class="biz-page" id="biz-dash-page">
+    // Phase 13 Global Command Structure (Mobile-First 12-Column Grid)
+    container.innerHTML = `
+    <div class="biz-page" id="biz-dash-page">
         <!-- Dashboard Header -->
-        <div class="biz-section-header" style="margin-bottom:16px; border-bottom:1px solid var(--biz-border); padding-bottom:12px">
-            <h2 class="biz-page-title" style="font-size:22px;letter-spacing:-0.5px">Hari Ini</h2>
-            <div style="font-size:13px;color:var(--biz-text-muted);font-weight:600" id="dash-date">${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+        <div class="biz-section-header" style="margin-bottom:16px; border-bottom:1px solid var(--biz-border); padding-bottom:12px; display:flex; justify-content:space-between; align-items:center">
+            <div>
+                <h2 class="biz-page-title" style="font-size:22px;letter-spacing:-0.5px">Business Command</h2>
+                <div style="font-size:13px;color:var(--biz-text-muted);font-weight:600" id="dash-date">${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+            </div>
+            <div class="biz-quick-actions" style="display:flex; gap:8px;">
+                <button class="biz-btn biz-btn-primary" style="padding:6px 12px; font-size:12px" onclick="bizOpenModal('biz-modal-quick-sale')"><i class="fas fa-plus"></i> Sale</button>
+            </div>
         </div>
 
-        <!-- Big Numbers (Today) -->
-        <div class="biz-row" id="dash-kpi-grid" style="margin-bottom:16px;gap:8px">
-            <!-- Injected via JS -->
-            <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i></div>
-        </div>
-
-        <!-- Top Product & Health -->
-        <div class="biz-row" style="flex-wrap:nowrap;gap:8px;margin-bottom:20px">
-            <div id="dash-health-card" class="biz-card" style="flex:1;min-width:130px;padding:14px;text-align:center">
-                <div style="font-size:11px;font-weight:700;color:var(--biz-text-muted);margin-bottom:6px">Health Score</div>
-                <div class="biz-health-score-num" style="font-size:30px" id="dash-health-num">—</div>
-                <div id="dash-health-status" style="font-size:11px;font-weight:700;margin-top:2px">—</div>
+        <!-- 12-Column Main Grid Wrapper -->
+        <div style="display:grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap:16px;">
+            
+            <!-- ZONE 1: Strategic Business Pulse (KPI Cards) -->
+            <!-- Mobile: span 12 (1 col within), Tablet: span 12 (2 col within), Desktop: spans 3 per card manually or flex -->
+            <div style="grid-column: span 12; display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px;" id="dash-zone1-kpi">
+                ${_dashKpiSkeleton()}
             </div>
 
-            <div class="biz-card" style="flex:1.5;min-width:160px;padding:14px;display:flex;flex-direction:column;justify-content:center">
-                <div style="font-size:11px;font-weight:700;color:var(--biz-text-muted);margin-bottom:6px"><i class="fas fa-crown" style="color:#f59e0b"></i> Top Product</div>
-                <div id="dash-top-product-highlight">
-                    <div style="font-size:14px;font-weight:700;color:var(--biz-text)">—</div>
-                    <div style="font-size:11px;color:var(--biz-text-muted)">Sold: 0</div>
+            <!-- ZONE 2 & 3 CONTAINER: Radar + Pulse -->
+            <div style="grid-column: span 12; display:grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap:16px;" class="dash-mid-grid">
+                
+                <!-- ZONE 3: Profit Radar (Signature Feature) -->
+                <!-- Desktop: 5 cols. Tablet/Mobile: 12 cols -->
+                <div class="dash-radar-col" style="grid-column: span 12;">
+                    <div class="biz-card" style="height:100%; border-top: 3px solid var(--biz-primary)">
+                        <div class="biz-card-header" style="padding-bottom:0">
+                            <div class="biz-card-title"><i class="fas fa-satellite-dish" style="color:var(--biz-primary)"></i> Profit Radar</div>
+                            <div id="dash-radar-score" style="font-size:12px; font-weight:700; background:var(--biz-surface-2); padding:2px 8px; border-radius:12px">—</div>
+                        </div>
+                        <div style="padding:16px; display:flex; justify-content:center; align-items:center; min-height:220px;">
+                            <canvas id="dashRadarChart" style="max-height:240px; width:100%"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ZONE 4 & 2: AI CFO Insight + Live Pulse -->
+                <!-- Desktop: 7 cols. Tablet/Mobile: 12 cols -->
+                <div class="dash-ai-col" style="grid-column: span 12; display:flex; flex-direction:column; gap:16px;">
+                    
+                    <!-- ZONE 2: Live Business Pulse -->
+                    <div class="biz-card" style="background:var(--biz-surface-2)">
+                        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center">
+                            <div style="display:flex; align-items:center; gap:8px">
+                                <div style="width:8px; height:8px; border-radius:50%; background:var(--biz-danger); box-shadow:0 0 8px var(--biz-danger); animation:pulse 1.5s infinite"></div>
+                                <div style="font-size:12px; font-weight:700; color:var(--biz-text-dim); text-transform:uppercase">Live: Last 60 Mins</div>
+                            </div>
+                            <div id="dash-zone2-live" style="display:flex; gap:16px; font-weight:700; font-size:14px">
+                                <div><i class="fas fa-shopping-bag" style="color:var(--biz-text-muted)"></i> <span id="dash-live-qty">-</span></div>
+                                <div><i class="fas fa-sack-dollar" style="color:var(--biz-success)"></i> <span id="dash-live-rev">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ZONE 4: AI CFO Panel -->
+                    <div class="biz-card" style="flex:1; border:1px solid var(--biz-border-strong); border-bottom:3px solid var(--biz-success)">
+                        <div class="biz-card-header" style="margin-bottom:8px">
+                            <div class="biz-card-title"><i class="fas fa-robot" style="color:var(--biz-success)"></i> AI CFO Insights</div>
+                        </div>
+                        <div id="dash-zone4-insights" style="display:flex; flex-direction:column; gap:8px; padding:0 16px 16px 16px;">
+                            <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i> Analyzing Business Health...</div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
-        </div>
 
-        <!-- Quick Actions -->
-        <div class="biz-quick-actions" id="dash-quick-actions" style="margin-bottom:20px">
-            <button class="biz-quick-btn" onclick="bizOpenModal('biz-modal-quick-sale')">
-                <i class="fas fa-bolt" style="color:var(--biz-warning)"></i> + Sale
-            </button>
-            <button class="biz-quick-btn" onclick="bizOpenModal('biz-modal-expense')">
-                <i class="fas fa-arrow-trend-down" style="color:var(--biz-danger)"></i> + Expense
-            </button>
-            <button class="biz-quick-btn" onclick="bizOpenModal('biz-modal-product'); setTimeout(()=>document.getElementById('prod-name').focus(),200)">
-                <i class="fas fa-box" style="color:var(--biz-primary)"></i> + Product
-            </button>
-        </div>
-
-        <!-- Smart AI Insights (Insight Feed) -->
-        <div class="biz-card" style="margin-bottom:20px;border:1px solid var(--biz-border-strong);border-bottom:3px solid var(--biz-success)">
-            <div class="biz-card-header" style="margin-bottom:12px">
-                <div class="biz-card-title"><i class="fas fa-wand-magic-sparkles" style="color:var(--biz-success)"></i> Business Insight</div>
+            <!-- ZONE 5: Historical Trends (Bottom) -->
+            <div style="grid-column: span 12; margin-top:8px;">
+                <div class="biz-card">
+                    <div class="biz-card-header">
+                        <div class="biz-card-title">Penjualan Terbaru</div>
+                        <button class="biz-card-action" onclick="bizSwitchTab('sales')">Semua →</button>
+                    </div>
+                    <div id="dash-recent-sales"><div class="biz-loading"><i class="fas fa-spinner fa-spin"></i></div></div>
+                </div>
             </div>
-            <div id="dash-insight-feed" style="display:flex;flex-direction:column;gap:10px;">
-                <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i> Analisa berjalan...</div>
-            </div>
-        </div>
-
-        <!-- Chart -->
-        <div class="biz-chart-wrap" id="dash-chart-section">
-            <div class="biz-card-header" style="margin-bottom:0">
-                <div class="biz-card-title"><i class="fas fa-chart-area" style="color:var(--biz-primary)"></i> Revenue 7 Hari</div>
-            </div>
-            <div id="dash-chart-container">
-                <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i></div>
-            </div>
-            <div id="dash-chart-labels"></div>
-        </div>
-        
-        <!-- Recent Sales -->
-        <div class="biz-card" style="margin-top:16px">
-            <div class="biz-card-header">
-                <div class="biz-card-title">Penjualan Terbaru</div>
-                <button class="biz-card-action" onclick="bizSwitchTab('sales')">Semua →</button>
-            </div>
-            <div id="dash-recent-sales"><div class="biz-loading"><i class="fas fa-spinner fa-spin"></i></div></div>
+            
         </div>
     </div>`;
 
-    // Update page title
-    const pt = document.getElementById('biz-page-title');
-    if (pt) pt.textContent = 'Dashboard';
+    // Simple inline style to handle desktop breakpoints without muddying business-core.css
+    if (!document.getElementById('dash-grid-styles')) {
+        const style = document.createElement('style');
+        style.id = 'dash-grid-styles';
+        style.innerHTML = `
+            @media (min-width: 1024px) {
+                .dash-radar-col { grid-column: span 5 !important; }
+                .dash-ai-col { grid-column: span 7 !important; }
+            }
+            @keyframes pulse { 0% { opacity:0.5; transform:scale(0.8) } 50% { opacity:1; transform:scale(1.2) } 100% { opacity:0.5; transform:scale(0.8) } }
+        `;
+        document.head.appendChild(style);
+    }
 
-    // Load data in parallel
-    const today = bizToday();
-    const [snapshots, sales, saleItems, biz] = await Promise.all([
-        BizDB.finSnapshots.getAll(),
-        BizDB.sales.getAll(),
-        BizDB.saleItems.getAll(),
-        BizDB.businesses.getAll(),
+    // Load data in parallel using the Intelligence engines
+    const [salesIntel, healthRadar, cfoInsights, sales] = await Promise.all([
+        typeof bizSalesIntelligence === 'function' ? bizSalesIntelligence(bizId) : null,
+        typeof bizHealthScoreAnalytics === 'function' ? bizHealthScoreAnalytics(bizId) : null,
+        typeof bizGenerateGlobalInsights === 'function' ? bizGenerateGlobalInsights(bizId) : null,
+        BizDB.sales.getAll()
     ]);
 
-    // Business name in sidebar brand
-    if (biz[0]) {
-        const brandSub = document.querySelector('.biz-sidebar-brand-sub');
-        if (brandSub) brandSub.textContent = biz[0].name;
+    // ZONE 1: Strategic Pulse
+    if (salesIntel) {
+        // Find cash safely
+        const snaps = await BizDB.finSnapshots.getAll();
+        const todaySnap = snaps.find(s => s.snapshot_date === _fmtDate(new Date()) && s.business_id === bizId) || {};
+
+        // Use sales intel for highly accurate 30day rolling window, mapped to UI
+        const rev30 = salesIntel.overview.rev30 || 0;
+        const prof30 = salesIntel.overview.profit30 || 0; // Approximated from sales if needed, but snapshots are better for net
+        const ords = salesIntel.overview.orders || 0;
+        const cashBal = todaySnap.cash_balance || 0;
+
+        // Determine profit safely
+        let netProfit30 = prof30;
+        if (typeof bizCalculateProfitMargin === 'function') {
+            const pm = await bizCalculateProfitMargin(bizId);
+            netProfit30 = pm.netProfit || prof30;
+        }
+
+        document.getElementById('dash-zone1-kpi').innerHTML = `
+            <div class="biz-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center">
+                <div style="font-size:11px; font-weight:700; color:var(--biz-text-muted); text-transform:uppercase; margin-bottom:4px">Revenue (30H)</div>
+                <div style="font-size:22px; font-weight:800; color:var(--biz-text); letter-spacing:-0.5px">${bizRp(rev30)}</div>
+                <div style="font-size:11px; font-weight:600; color:${salesIntel.overview.revGrowth >= 0 ? 'var(--biz-success)' : 'var(--biz-danger)'}; margin-top:4px">
+                    ${salesIntel.overview.revGrowth >= 0 ? '+' : ''}${parseFloat(salesIntel.overview.revGrowth || 0).toFixed(1)}% vs Last Mo
+                </div>
+            </div>
+            <div class="biz-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center">
+                <div style="font-size:11px; font-weight:700; color:var(--biz-text-muted); text-transform:uppercase; margin-bottom:4px">Profit (30H)</div>
+                <div style="font-size:22px; font-weight:800; color:var(--biz-success); letter-spacing:-0.5px">${bizRp(netProfit30)}</div>
+            </div>
+            <div class="biz-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center">
+                <div style="font-size:11px; font-weight:700; color:var(--biz-text-muted); text-transform:uppercase; margin-bottom:4px">Total Orders</div>
+                <div style="font-size:22px; font-weight:800; color:var(--biz-text); letter-spacing:-0.5px">${ords}</div>
+            </div>
+            <div class="biz-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center">
+                <div style="font-size:11px; font-weight:700; color:var(--biz-text-muted); text-transform:uppercase; margin-bottom:4px">Cash Balance</div>
+                <div style="font-size:22px; font-weight:800; color:var(--biz-text); letter-spacing:-0.5px">${bizRp(cashBal)}</div>
+            </div>
+        `;
+
+        // ZONE 2: Live Pulse
+        document.getElementById('dash-live-qty').textContent = salesIntel.realtime.ord60m;
+        document.getElementById('dash-live-rev').textContent = bizRpFull(salesIntel.realtime.rev60m);
     }
 
-    // Filter today's + month's snapshots
-    const monthKey = bizMonthKey();
-    const todaySnap = snapshots.find(s => s.snapshot_date === today) || {};
-    const monthSnaps = snapshots.filter(s => s.snapshot_date && s.snapshot_date.startsWith(monthKey));
+    // ZONE 3: Profit Radar
+    if (healthRadar) {
+        const sEl = document.getElementById('dash-radar-score');
+        sEl.textContent = `${healthRadar.score} — ${healthRadar.status}`;
+        if (healthRadar.score >= 80) { sEl.style.color = 'var(--biz-primary)'; sEl.style.background = 'var(--biz-primary-light)'; }
+        else if (healthRadar.score < 50) { sEl.style.color = 'var(--biz-danger)'; sEl.style.background = 'rgba(239, 68, 68, 0.1)'; }
 
-    const revenueToday = todaySnap.revenue || 0;
-    const profitToday = todaySnap.profit || 0;
-    const ordersToday = todaySnap.orders_count || 0;
-    const expToday = todaySnap.expenses || 0;
-
-    // KPI
-    const marginToday = revenueToday > 0 ? ((profitToday / revenueToday) * 100).toFixed(0) : 0;
-
-    // KPI Big Numbers (Today) - 3 Columns
-    document.getElementById('dash-kpi-grid').innerHTML = `
-        <div class="biz-card" style="flex:1.5; padding:16px 12px; text-align:center">
-            <div style="font-size:11px;font-weight:700;color:var(--biz-text-muted);margin-bottom:4px;text-transform:uppercase">Revenue</div>
-            <div style="font-size:20px;font-weight:800;color:var(--biz-text);letter-spacing:-0.5px;max-width:100%">${bizRp(revenueToday)}</div>
-        </div>
-        <div class="biz-card" style="flex:1.5; padding:16px 12px; text-align:center">
-            <div style="font-size:11px;font-weight:700;color:var(--biz-text-muted);margin-bottom:4px;text-transform:uppercase">Profit</div>
-            <div style="font-size:20px;font-weight:800;color:var(--biz-success);letter-spacing:-0.5px">${bizRp(profitToday)}</div>
-        </div>
-        <div class="biz-card" style="flex:1; padding:16px 12px; text-align:center; background:var(--biz-surface-2)">
-            <div style="font-size:11px;font-weight:700;color:var(--biz-text-muted);margin-bottom:4px;text-transform:uppercase">Margin</div>
-            <div style="font-size:20px;font-weight:800;color:var(--biz-primary)">${marginToday}%</div>
-        </div>`;
-
-    // Intelligence — Health Score
-    if (typeof bizHealthScore === 'function') {
-        const { score, status, color } = bizHealthScore(snapshots, bizId);
-        document.getElementById('dash-health-num').textContent = score;
-        document.getElementById('dash-health-status').textContent = status;
-        document.getElementById('dash-health-status').style.color = color;
+        _dashRenderRadarChart(healthRadar.axes);
+    } else {
+        document.getElementById('dashRadarChart').parentElement.innerHTML = '<div class="biz-empty" style="padding:20px; text-align:center"><i class="fas fa-chart-pie"></i><br>Belum cukup data untuk Radar</div>';
     }
 
-
-    // Chart — 14 day sparkline
-    _dashRenderChart(snapshots, bizId);
-
-    // Top Products
-    _dashRenderTopProducts(saleItems, monthKey);
-
-    // Recent Sales
-    _dashRenderRecentSales(sales);
-
-    // Backup reminder
-    if (typeof bizCheckBackupReminder === 'function') bizCheckBackupReminder('dash-backup-reminder');
-
-    // Load AI Advisor Insights
-    if (typeof bizGenerateInsights === 'function') {
-        const insights = await bizGenerateInsights(bizId);
-        const ifeed = document.getElementById('dash-insight-feed');
-        if (ifeed) {
-            ifeed.innerHTML = insights.map(ins => `
-                <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--biz-${ins.type}-bg, rgba(0,0,0,0.03));border:1px solid rgba(0,0,0,0.05);border-radius:12px">
-                    <div style="color:var(--biz-${ins.type});margin-top:2px"><i class="fas ${ins.icon}"></i></div>
-                    <div style="flex:1;font-size:13px;line-height:1.45;color:var(--biz-text)">${ins.text}</div>
+    // ZONE 4: AI CFO Insights
+    const ifeed = document.getElementById('dash-zone4-insights');
+    if (ifeed && cfoInsights) {
+        if (cfoInsights.length === 0) {
+            ifeed.innerHTML = '<div class="biz-empty" style="font-size:12px; margin-top:10px">Belum ada insight bisnis dari AI. Catat penjualan untuk mulai!</div>';
+        } else {
+            ifeed.innerHTML = cfoInsights.map(ins => `
+                <div style="display:flex; gap:12px; align-items:flex-start; padding:12px 14px; background:var(--biz-surface-2); border:1px solid rgba(0,0,0,0.05); border-radius:12px">
+                    <div style="font-size:16px; margin-top:0px">${ins.icon}</div>
+                    <div style="flex:1; font-size:12px; line-height:1.45; color:var(--biz-text); font-weight:500">${ins.text}</div>
                 </div>
             `).join('');
         }
     }
+
+    // ZONE 5: Recent Sales
+    _dashRenderRecentSales(sales);
+}
+
+// Ensure the chart is painted after the canvas is physically inside the DOM flow
+function _dashRenderRadarChart(axes) {
+    if (typeof Chart === 'undefined') return;
+    const ctx = document.getElementById('dashRadarChart');
+    if (!ctx) return;
+
+    const dataArr = [axes.revenue, axes.profit, axes.inventory, axes.cashflow, axes.customer];
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const brandColor = '#3b82f6'; // primary
+
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Rev Growth', 'Margin', 'Inv Health', 'Cashflow', 'Loyalty'],
+            datasets: [{
+                label: 'Business Vitals',
+                data: dataArr,
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: brandColor,
+                pointBackgroundColor: brandColor,
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: brandColor,
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { color: gridColor },
+                    grid: { color: gridColor },
+                    pointLabels: {
+                        color: textColor,
+                        font: { size: 10, weight: 'bold', family: 'Inter' }
+                    },
+                    ticks: {
+                        display: false, // hide the internal numbers (0..100) 
+                        min: 0,
+                        max: 100,
+                        stepSize: 25
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: isDark ? 'rgba(30,41,59,0.9)' : 'rgba(255,255,255,0.9)',
+                    titleColor: isDark ? '#fff' : '#000',
+                    bodyColor: isDark ? '#cbd5e1' : '#334155',
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: { label: (ctx) => `Score: ${ctx.raw}/100` }
+                }
+            }
+        }
+    });
 }
 
 function _dashKpiSkeleton() {
-    return ['revenue', 'profit', 'orders', 'expense'].map(k =>
-        `<div class="biz-kpi-card ${k}">
-            <div class="biz-kpi-label">—</div>
-            <div class="biz-kpi-value" style="color:var(--biz-border)">Rp 0</div>
-        </div>`).join('');
-}
-
-function _dashRenderChart(snapshots, bizId) {
-    // Get last 7 days
-    const days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (6 - i));
-        return d.toISOString().split('T')[0];
-    });
-    const values = days.map(d => {
-        const snap = snapshots.find(s => s.snapshot_date === d && s.business_id === bizId);
-        return snap ? (snap.revenue || 0) : 0;
-    });
-    const max = Math.max(...values, 1);
-
-    const formatNum = (v) => {
-        if (v === 0) return '';
-        if (v >= 1000000) return (v / 1000000).toFixed(1).replace('.0', '') + 'M';
-        if (v >= 1000) return (v / 1000).toFixed(0) + 'K';
-        return v;
-    };
-
-    const formatDay = (dStr) => {
-        const d = new Date(dStr);
-        return d.toLocaleDateString('id-ID', { weekday: 'short' });
-    };
-
-    document.getElementById('dash-chart-container').innerHTML = `
-        <div style="display:flex;align-items:flex-end;justify-content:space-between;height:100px;padding-top:15px;gap:6px">
-            ${values.map((v, i) => {
-        const h = Math.max((v / max) * 100, 4); // min 4%
-        return `
-                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">
-                    <div style="font-size:10px;font-weight:700;color:var(--biz-text-muted);margin-bottom:6px;letter-spacing:-0.5px">${formatNum(v)}</div>
-                    <div style="width:100%;max-width:32px;background:var(--biz-primary);border-radius:6px 6px 0 0;height:${h}%;opacity:${i === 6 ? 1 : 0.6};transition:all 0.3s ease"></div>
-                </div>`;
-    }).join('')}
+    return Array(4).fill().map(() => `
+        <div class="biz-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center; opacity:0.6">
+            <div style="height:12px; width:50%; background:var(--biz-border); border-radius:4px; margin-bottom:8px"></div>
+            <div style="height:24px; width:80%; background:var(--biz-border); border-radius:4px"></div>
         </div>
-    `;
-
-    document.getElementById('dash-chart-labels').innerHTML = `
-        <div style="display:flex;justify-content:space-between;margin-top:8px">
-            ${days.map(d => `<div style="flex:1;text-align:center;font-size:10px;color:var(--biz-text-dim);font-weight:600">${formatDay(d)}</div>`).join('')}
-        </div>
-    `;
-}
-
-async function _dashRenderTopProducts(saleItems, monthKey) {
-    const el = document.getElementById('dash-top-product-highlight');
-    if (!el) return;
-
-    const monthItems = saleItems.filter(si => si.created_at && si.created_at.startsWith(monthKey));
-    const freq = {};
-    monthItems.forEach(si => {
-        if (!freq[si.product_id]) freq[si.product_id] = { name: si.product_name, qty: 0 };
-        freq[si.product_id].qty += si.quantity;
-    });
-
-    const sorted = Object.values(freq).sort((a, b) => b.qty - a.qty);
-    if (!sorted.length) {
-        el.innerHTML = `<div style="font-size:16px;font-weight:700;color:var(--biz-text)">—</div>
-                        <div style="font-size:12px;color:var(--biz-text-muted)">Belum ada data</div>`;
-        return;
-    }
-
-    const top = sorted[0];
-    el.innerHTML = `<div style="font-size:16px;font-weight:700;color:var(--biz-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${_esc(top.name)}">${_esc(top.name)}</div>
-                    <div style="font-size:12px;color:var(--biz-text-muted);font-weight:600">Sold: <span style="color:var(--biz-primary)">${top.qty}</span></div>`;
+    `).join('');
 }
 
 function _dashRenderRecentSales(sales) {
@@ -266,8 +289,6 @@ function _dashRenderRecentSales(sales) {
     }).join('');
 }
 
-window.bizLoadDashboard = bizLoadDashboard;
-
 // Helpers
 function _esc(s) { return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function _payLabel(m) { return { cash: 'Cash', transfer: 'Transfer', qris: 'QRIS', other: 'Lainnya' }[m] || m || 'Cash'; }
@@ -280,6 +301,8 @@ function _timeAgo(iso) {
     if (h < 24) return `${h} jam lalu`;
     return `${Math.floor(h / 24)} hari lalu`;
 }
-window._esc = _esc;
-window._payLabel = _payLabel;
+function _fmtDate(d) { return d.toISOString().split('T')[0]; }
+
+window.bizLoadDashboard = bizLoadDashboard;
 window._timeAgo = _timeAgo;
+window._payLabel = _payLabel;

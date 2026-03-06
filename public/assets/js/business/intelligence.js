@@ -185,11 +185,11 @@ function bizHealthInsight(snapshots, businessId) {
 }
 window.bizHealthInsight = bizHealthInsight;
 
-// ── 5. Stock Burn Rate & Inventory Health ────────────────────────────────────
+// ── 5. Stock Burn Rate & Inventory Health (SaaS Level Upgrade) ──────────────
 async function bizInventoryHealth(businessId) {
     const cacheKey = 'inv_health_' + businessId;
     const cached = _iCacheGet(cacheKey);
-    if (cached) return cached;
+    // if (cached) return cached; // Temporarily disabled cache for development
 
     const [products, saleItems, sales] = await Promise.all([
         BizDB.products.getAll(),
@@ -199,51 +199,160 @@ async function bizInventoryHealth(businessId) {
 
     const physical = products.filter(p => p.type === 'physical' && p.is_active !== false && p.business_id === businessId);
 
-    // Calculate avg sales per day over last 14 days
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 14);
-    const recentSales = new Set(
-        sales.filter(s => s.business_id === businessId && new Date(s.sale_date) >= cutoff).map(s => s.id)
-    );
-    const recentItems = saleItems.filter(si => recentSales.has(si.sale_id));
+    // Calculate avg sales per day over last 30 days for more accurate velocity
+    const cutoff30 = new Date();
+    cutoff30.setDate(cutoff30.getDate() - 30);
+    const recentSales30 = sales.filter(s => s.business_id === businessId && new Date(s.sale_date || s.created_at) >= cutoff30);
+    const recentSalesIds = new Set(recentSales30.map(s => s.id));
 
+    // Also track last sold date
+    const lastSoldMap = {};
     const dailySalesMap = {};
-    recentItems.forEach(si => {
+
+    // We need to loop through items to build the maps
+    const myItems = saleItems.filter(si => {
+        // Need a way to tie item to sale date. Since saleItems don't have date, we cross ref.
+        return recentSalesIds.has(si.sale_id);
+    });
+
+    // Build a map of sale_id -> date for quick lookup
+    const saleDateMap = {};
+    recentSales30.forEach(s => saleDateMap[s.id] = new Date(s.sale_date || s.created_at));
+
+    myItems.forEach(si => {
         dailySalesMap[si.product_id] = (dailySalesMap[si.product_id] || 0) + si.quantity;
+
+        const saleDate = saleDateMap[si.sale_id];
+        if (saleDate) {
+            if (!lastSoldMap[si.product_id] || saleDate > lastSoldMap[si.product_id]) {
+                lastSoldMap[si.product_id] = saleDate;
+            }
+        }
     });
 
     const burnRates = [];
-    let lowStockCount = 0;
-    let outStockCount = 0;
-    let overStockCount = 0;
+    let stateCounts = { fast: 0, normal: 0, slow: 0, dead: 0, low: 0, out: 0, over: 0, expiring: 0 };
+
+    const now = new Date();
 
     physical.forEach(p => {
-        const soldIn14 = dailySalesMap[p.id] || 0;
-        const avgDaily = soldIn14 / 14;
+        const soldIn30 = dailySalesMap[p.id] || 0;
+        const avgDaily = soldIn30 / 30;
         const daysLeft = avgDaily > 0 ? Math.floor(p.stock / avgDaily) : 999;
+        const lastSold = lastSoldMap[p.id] || null;
 
-        if (p.stock <= 0) outStockCount++;
-        else if (p.stock <= (p.low_stock_alert || 5)) lowStockCount++;
-        else if (daysLeft > 90 && p.stock > 20) overStockCount++; // Overstock (3 months runway)
+        // Days since last sold
+        let daysSinceSold = 999;
+        if (lastSold) {
+            daysSinceSold = Math.floor((now - lastSold) / (1000 * 60 * 60 * 24));
+        } else {
+            // Check if created recently
+            const created = p.created_at ? new Date(p.created_at) : null;
+            if (created) daysSinceSold = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+        }
+
+        let velocityLabel = 'NORMAL';
+        let stockLabel = 'OK';
+
+        // Velocity logic
+        if (avgDaily > 2) { velocityLabel = 'FAST'; stateCounts.fast++; }
+        else if (avgDaily >= 0.5) { velocityLabel = 'NORMAL'; stateCounts.normal++; }
+        else if (avgDaily > 0) { velocityLabel = 'SLOW'; stateCounts.slow++; }
+        else { velocityLabel = 'DEAD'; stateCounts.dead++; }
+
+        // Stock quantity logic
+        if (p.stock <= 0) { stockLabel = 'OUT'; stateCounts.out++; }
+        else if (p.stock <= (p.low_stock_alert || 5)) { stockLabel = 'LOW'; stateCounts.low++; }
+        else if (avgDaily > 0 && p.stock > (avgDaily * 30 * 3)) { stockLabel = 'OVER'; stateCounts.over++; } // Over 3 months of stock
+
+        // Expiry logic (if applicable, assuming format YYYY-MM-DD or similar in meta)
+        if (p.meta && p.meta.expiry_date) {
+            const expD = new Date(p.meta.expiry_date);
+            const diffDays = Math.ceil((expD - now) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays <= 7) {
+                stockLabel = 'EXPIRING';
+                stateCounts.expiring++;
+            }
+        }
+
+        // Determine final master status for badge
+        let masterStatus = velocityLabel;
+        if (stockLabel === 'OUT') masterStatus = 'OUT';
+        else if (stockLabel === 'EXPIRING') masterStatus = 'EXPIRING';
+        else if (stockLabel === 'LOW') masterStatus = 'LOW';
+        else if (stockLabel === 'OVER') masterStatus = 'OVER';
+
+        const hpp = p.hpp || 0;
+        const price = p.price || 0;
+        const marginPct = price > 0 && hpp > 0 ? ((price - hpp) / price) * 100 : 0;
 
         burnRates.push({
             id: p.id,
             name: p.name,
+            sku: p.sku || '-',
+            category: p.category_id || 'Uncategorized',
             stock: p.stock,
-            avgDaily: Number(avgDaily.toFixed(1)),
-            daysLeft: daysLeft > 900 ? '90+' : daysLeft
+            hpp: hpp,
+            price: price,
+            marginPct: Number(marginPct.toFixed(1)),
+            stockValue: p.stock * hpp,
+            avgDaily: Number(avgDaily.toFixed(2)),
+            daysLeft: daysLeft > 900 ? '90+' : daysLeft,
+            lastSold: lastSold,
+            daysSinceSold: daysSinceSold,
+            velocityLabel: velocityLabel,
+            stockLabel: stockLabel,
+            masterStatus: masterStatus
         });
     });
 
-    burnRates.sort((a, b) => a.daysLeft === '90+' ? 1 : b.daysLeft === '90+' ? -1 : a.daysLeft - b.daysLeft);
+    // Gamified Health Score via Ratio Logic
+    const totalPhysical = physical.length || 1; // prevent div by zero
+    const rDead = stateCounts.dead / totalPhysical;
+    const rLow = (stateCounts.low + stateCounts.out) / totalPhysical;
+    const rOver = stateCounts.over / totalPhysical;
+    const rFast = stateCounts.fast / totalPhysical;
 
-    let score = 100;
-    score -= (outStockCount * 10);
-    score -= (lowStockCount * 5);
-    score -= (overStockCount * 3);
-    score = Math.max(0, Math.min(100, score));
+    let score = 100
+        - (rDead * 40)
+        - (rLow * 25)
+        - (rOver * 20)
+        + (rFast * 10);
 
-    const result = { score, outStockCount, lowStockCount, overStockCount, burnRates };
+    score = Math.max(0, Math.min(100, Math.round(score)));
+
+    // Generate Predictive Alerts
+    const alerts = [];
+    if (stateCounts.low > 0) alerts.push({ type: 'danger', icon: 'fa-triangle-exclamation', text: `${stateCounts.low} produk stok kritis/menipis.` });
+    if (stateCounts.out > 0) alerts.push({ type: 'danger', icon: 'fa-ban', text: `${stateCounts.out} produk out of stock.` });
+    if (stateCounts.over > 0) alerts.push({ type: 'warning', icon: 'fa-boxes-packing', text: `${stateCounts.over} produk overstock (modal menganggur).` });
+    if (stateCounts.expiring > 0) alerts.push({ type: 'danger', icon: 'fa-clock', text: `${stateCounts.expiring} produk akan expired dalam waktu dekat.` });
+    if (stateCounts.dead > 0 && stateCounts.dead > (totalPhysical * 0.1)) alerts.push({ type: 'warning', icon: 'fa-skull', text: `${stateCounts.dead} produk dead stock (${Math.round(rDead * 100)}% dari katalog).` });
+
+    // AI Insight Engine Generation
+    const insights = [];
+    const valByCat = {};
+    burnRates.forEach(b => valByCat[b.category] = (valByCat[b.category] || 0) + b.stockValue);
+    const sortedCats = Object.entries(valByCat).sort((a, b) => b[1] - a[1]);
+    const totalVal = burnRates.reduce((a, b) => a + b.stockValue, 0) || 1;
+
+    if (sortedCats.length > 0 && (sortedCats[0][1] / totalVal) > 0.4) {
+        insights.push(`Kategori "${sortedCats[0][0]}" menyumbang ${Math.round((sortedCats[0][1] / totalVal) * 100)}% dari total nilai stok (Rp ${(sortedCats[0][1] / 1000000).toFixed(1)}jt).`);
+    }
+
+    const fastItems = burnRates.filter(b => b.velocityLabel === 'FAST').sort((a, b) => b.marginPct - a.marginPct);
+    if (fastItems.length > 0) {
+        insights.push(`Produk paling profitable & laku keras: ${fastItems[0].name} (${fastItems[0].marginPct.toFixed(0)}% margin).`);
+    }
+
+    // Predictive Insight
+    const soonEmpty = burnRates.filter(b => b.daysLeft !== '90+' && b.daysLeft > 0 && b.daysLeft <= 5);
+    if (soonEmpty.length > 0) {
+        soonEmpty.sort((a, b) => a.daysLeft - b.daysLeft);
+        insights.push(`Prediksi: ${soonEmpty[0].name} akan habis dalam ${soonEmpty[0].daysLeft} hari berdasarkan tren saat ini.`);
+    }
+
+    const result = { score, counts: stateCounts, burnRates, alerts, insights, totalValue: totalVal };
     _iCacheSet(cacheKey, result, BIZ_CACHE_TTL.healthScore);
     return result;
 }
@@ -526,3 +635,597 @@ function bizClearIntelligenceCache() {
         .forEach(k => localStorage.removeItem(k));
 }
 window.bizClearIntelligenceCache = bizClearIntelligenceCache;
+
+// ── 7. Product Intelligence (SaaS Level Upgrade) ────────────────────────────────
+async function bizProductIntelligence(businessId) {
+    const cacheKey = 'prod_intel_' + businessId;
+    const cached = _iCacheGet(cacheKey);
+    // if (cached) return cached; // Temporarily disabled cache for development
+
+    const [products, saleItems, sales] = await Promise.all([
+        BizDB.products.getAll(),
+        BizDB.saleItems.getAll(),
+        BizDB.sales.getAll()
+    ]);
+
+    const physical = products.filter(p => p.type === 'physical' && p.is_active !== false && p.business_id === businessId);
+
+    const now = new Date();
+    const cutoff30 = new Date(now);
+    cutoff30.setDate(cutoff30.getDate() - 30);
+
+    const recentSales30 = sales.filter(s => s.business_id === businessId && new Date(s.sale_date || s.created_at) >= cutoff30);
+    const recentSalesIds = new Set(recentSales30.map(s => s.id));
+
+    // Maps
+    const lastSoldMap = {};
+    const dailySalesMap = {};
+    const revenue30Map = {};
+    const profit30Map = {};
+
+    const saleDateMap = {};
+    recentSales30.forEach(s => saleDateMap[s.id] = new Date(s.sale_date || s.created_at));
+
+    const myItems = saleItems.filter(si => recentSalesIds.has(si.sale_id));
+
+    myItems.forEach(si => {
+        const pid = si.product_id;
+        const qty = si.quantity || 0;
+        const price = si.price || 0;
+        const hpp = si.hpp || 0;
+
+        dailySalesMap[pid] = (dailySalesMap[pid] || 0) + qty;
+        revenue30Map[pid] = (revenue30Map[pid] || 0) + (qty * price);
+        profit30Map[pid] = (profit30Map[pid] || 0) + (qty * (price - hpp));
+
+        const saleDate = saleDateMap[si.sale_id];
+        if (saleDate) {
+            if (!lastSoldMap[pid] || saleDate > lastSoldMap[pid]) {
+                lastSoldMap[pid] = saleDate;
+            }
+        }
+    });
+
+    const enrichedProducts = [];
+    let highMarginCount = 0;
+    let lowMarginCount = 0;
+    let stagnantCount = 0;
+    let totalRevenue30d = 0;
+    let marginDistribution = { under10: 0, tenTo20: 0, twentyTo30: 0, over30: 0 };
+
+    // For calculating cross-system alerts
+    let alerts = [];
+    let insights = [];
+
+    physical.forEach(p => {
+        const sold30d = dailySalesMap[p.id] || 0;
+        const rev30d = revenue30Map[p.id] || 0;
+        const prof30d = profit30Map[p.id] || 0;
+        const lastSold = lastSoldMap[p.id] || null;
+
+        totalRevenue30d += rev30d;
+
+        const hpp = p.hpp || 0;
+        const price = p.price || 0;
+        const marginPct = price > 0 ? Math.round(((price - hpp) / price) * 100) : 0;
+
+        if (marginPct >= 30) highMarginCount++;
+        if (marginPct < 10 && marginPct >= 0 && price > 0) lowMarginCount++;
+        if (sold30d === 0) stagnantCount++;
+
+        // Margin Distribution
+        if (marginPct < 10) marginDistribution.under10++;
+        else if (marginPct < 20) marginDistribution.tenTo20++;
+        else if (marginPct <= 30) marginDistribution.twentyTo30++;
+        else marginDistribution.over30++;
+
+        // Days since creation roughly
+        let daysSinceLaunch = 999;
+        if (p.created_at) {
+            daysSinceLaunch = Math.floor((now - new Date(p.created_at)) / (1000 * 60 * 60 * 24));
+        }
+
+        let lifecycle = 'STABLE';
+        if (daysSinceLaunch <= 30 && sold30d > 0) lifecycle = 'NEW';
+        else if (sold30d === 0 && daysSinceLaunch > 30) lifecycle = 'DECLINING';
+        // Basic growth heuristic if not enough historical data: strong sales volume
+        else if (sold30d >= 15) lifecycle = 'GROWING';
+
+        // Cross-System Alert Triggers
+        if (lifecycle === 'GROWING' && p.stock <= (p.low_stock_alert || 5) && p.stock > 0) {
+            alerts.push({ type: 'warning', icon: 'fa-triangle-exclamation', text: `Barang Laris <b>${p.name}</b> sisa stok hanya ${p.stock}` });
+        }
+        if (sold30d === 0 && p.stock > 5) {
+            alerts.push({ type: 'danger', icon: 'fa-turtle', text: `<b>${p.name}</b> tidak terjual 30 hari (Overstock: ${p.stock})` });
+        }
+        if (marginPct < 10 && price > 0) {
+            alerts.push({ type: 'danger', icon: 'fa-tag', text: `Margin <b>${p.name}</b> sgt tipis (${marginPct}%)` });
+        }
+
+        enrichedProducts.push({
+            id: p.id,
+            name: p.name,
+            sku: p.sku || '-',
+            category: p.category || '-',
+            price: price,
+            hpp: hpp,
+            stock: p.stock || 0,
+            sold30d: sold30d,
+            rev30d: rev30d,
+            prof30d: prof30d,
+            marginPct: marginPct,
+            lastSold: lastSold,
+            lifecycle: lifecycle,
+            avgDaily: (sold30d / 30).toFixed(1)
+        });
+    });
+
+    // Sort heavily by revenue
+    const sortedByRevenue = [...enrichedProducts].sort((a, b) => b.rev30d - a.rev30d);
+    const sortedByProfit = [...enrichedProducts].sort((a, b) => b.prof30d - a.prof30d);
+
+    // Insights Generation
+    if (sortedByRevenue.length > 0) {
+        let top3Rev = 0;
+        for (let i = 0; i < Math.min(3, sortedByRevenue.length); i++) top3Rev += sortedByRevenue[i].rev30d;
+        let revConcentration = totalRevenue30d > 0 ? (top3Rev / totalRevenue30d) * 100 : 0;
+
+        if (revConcentration > 50) {
+            insights.push(`💡 Ketergantungan tinggi: 3 produk teratas menyumbang ${revConcentration.toFixed(0)}% dari total Revenue.`);
+        }
+    }
+
+    if (sortedByRevenue.length > 0 && sortedByProfit.length > 0) {
+        if (sortedByRevenue[0].id !== sortedByProfit[0].id) {
+            insights.push(`✨ <b>${sortedByProfit[0].name}</b> adalah produk paling profit, meskipun <b>${sortedByRevenue[0].name}</b> menang di omset.`);
+        }
+    }
+
+    if (lowMarginCount > 0) {
+        insights.push(`⚠ Peringatan Harga: ${lowMarginCount} produk memiliki margin sangat tipis (<10%).`);
+    }
+
+    // Prepare chart data (Top 10)
+    let top10RevLabels = [], top10RevData = [];
+    for (let i = 0; i < Math.min(10, sortedByRevenue.length); i++) {
+        let n = sortedByRevenue[i].name;
+        top10RevLabels.push(n.length > 15 ? n.substring(0, 12) + '...' : n);
+        top10RevData.push(sortedByRevenue[i].rev30d);
+    }
+
+    let top10ProfLabels = [], top10ProfData = [];
+    for (let i = 0; i < Math.min(10, sortedByProfit.length); i++) {
+        let n = sortedByProfit[i].name;
+        top10ProfLabels.push(n.length > 15 ? n.substring(0, 12) + '...' : n);
+        top10ProfData.push(sortedByProfit[i].prof30d);
+    }
+
+    // Concentrate
+    let top5Rev = 0;
+    for (let i = 0; i < Math.min(5, sortedByRevenue.length); i++) top5Rev += sortedByRevenue[i].rev30d;
+    let restRev = totalRevenue30d - top5Rev;
+
+    // Deduplicate alerts (max 5)
+    alerts = alerts.slice(0, 5);
+
+    const intelResult = {
+        stats: {
+            totalProducts: physical.length,
+            totalRev30d: totalRevenue30d,
+            highMargin: highMarginCount,
+            lowMargin: lowMarginCount,
+            topSellerName: sortedByRevenue.length > 0 && sortedByRevenue[0].rev30d > 0 ? sortedByRevenue[0].name : '-',
+            stagnant: stagnantCount
+        },
+        distribution: marginDistribution,
+        concentration: { top5: top5Rev, rest: restRev },
+        top10Rev: { labels: top10RevLabels, data: top10RevData },
+        top10Prof: { labels: top10ProfLabels, data: top10ProfData },
+        alerts: alerts,
+        insights: insights,
+        products: sortedByRevenue // Return sorted by rev by default
+    };
+
+    _iCacheSet(cacheKey, intelResult, 1000 * 60 * 5); // 5 mins cache
+    return intelResult;
+}
+window.bizProductIntelligence = bizProductIntelligence;
+
+// ── 8. Sales Intelligence (8-Layer Command Center) ───────────────────────────
+async function bizSalesIntelligence(businessId) {
+    const cacheKey = 'biz_sales_intel_' + businessId;
+    const cached = _iCacheGet(cacheKey);
+    // if (cached) return cached; // Temporarily disable cache for development
+
+    const [sales, saleItems, products, customers] = await Promise.all([
+        BizDB.sales.getAll(),
+        BizDB.saleItems.getAll(),
+        BizDB.products.getAll(),
+        BizDB.customers ? BizDB.customers.getAll() : Promise.resolve([])
+    ]);
+
+    const sAll = sales.filter(s => s.business_id === businessId);
+
+    const now = new Date();
+    const cutoff30d = new Date(now); cutoff30d.setDate(cutoff30d.getDate() - 30);
+    const cutoff60d = new Date(now); cutoff60d.setDate(cutoff60d.getDate() - 60);
+
+    // 1. Split Timeframes
+    const s30d = sAll.filter(s => new Date(s.sale_date || s.created_at) >= cutoff30d);
+    const sPrev30d = sAll.filter(s => {
+        const d = new Date(s.sale_date || s.created_at);
+        return d >= cutoff60d && d < cutoff30d;
+    });
+
+    // Overview KPIs
+    let rev30 = 0, revPrev30 = 0;
+    let ord30 = 0, ordPrev30 = 0;
+    let units30 = 0;
+    let canceled30 = 0;
+
+    s30d.forEach(s => {
+        if (s.status === 'cancelled') {
+            canceled30++;
+        } else {
+            rev30 += (s.final_total || s.total_amount || 0);
+            ord30++;
+        }
+    });
+
+    sPrev30d.forEach(s => {
+        if (s.status !== 'cancelled') {
+            revPrev30 += (s.final_total || s.total_amount || 0);
+            ordPrev30++;
+        }
+    });
+
+    const revGrowth = revPrev30 > 0 ? ((rev30 - revPrev30) / revPrev30) * 100 : 0;
+    const aov = ord30 > 0 ? (rev30 / ord30) : 0;
+    const refundRate = s30d.length > 0 ? (canceled30 / s30d.length) * 100 : 0;
+
+    // Extrapolate Revenue for month
+    const daysPassed = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const currMonthSales = sAll.filter(s => new Date(s.sale_date || s.created_at).getMonth() === now.getMonth() && s.status !== 'cancelled');
+    const currMonthRev = currMonthSales.reduce((sum, s) => sum + (s.final_total || s.total_amount || 0), 0);
+    const projectedRev = daysPassed > 0 ? (currMonthRev / daysPassed) * daysInMonth : 0;
+
+    // Real-Time Pulse (Last 60 mins)
+    const cutoff60m = new Date(now.getTime() - (60 * 60 * 1000));
+    const s60m = sAll.filter(s => new Date(s.sale_date || s.created_at) >= cutoff60m && s.status !== 'cancelled');
+    const rev60m = s60m.reduce((sum, s) => sum + (s.final_total || s.total_amount || 0), 0);
+    const ord60m = s60m.length;
+
+    // Maps construction
+    const pMap = {};
+    products.forEach(p => pMap[p.id] = p);
+
+    const s30Ids = new Set(s30d.filter(s => s.status !== 'cancelled').map(s => s.id));
+    const items30 = saleItems.filter(si => s30Ids.has(si.sale_id));
+
+    let catRev = {};
+    let prodRev = {};
+    let prodVol = {};
+
+    // Bundles (frequently bought together) logic
+    const saleToProductsMap = {};
+
+    items30.forEach(si => {
+        units30 += si.quantity;
+        const p = pMap[si.product_id];
+        const pName = p ? p.name : 'Unknown';
+        const pCat = p ? (p.category || 'General') : 'General';
+        const lineVal = (si.price * si.quantity) - (si.discount || 0);
+
+        catRev[pCat] = (catRev[pCat] || 0) + lineVal;
+        prodRev[pName] = (prodRev[pName] || 0) + lineVal;
+        prodVol[pName] = (prodVol[pName] || 0) + si.quantity;
+
+        // Group by sale_id for bundling
+        if (!saleToProductsMap[si.sale_id]) saleToProductsMap[si.sale_id] = [];
+        saleToProductsMap[si.sale_id].push(pName);
+    });
+
+    // Calculate Bundles (O(N^2) on order lines)
+    let pairCounts = {};
+    Object.values(saleToProductsMap).forEach(prodArr => {
+        // deduplicate within order
+        const unique = [...new Set(prodArr)].sort();
+        for (let i = 0; i < unique.length; i++) {
+            for (let j = i + 1; j < unique.length; j++) {
+                const pairStr = unique[i] + ' + ' + unique[j];
+                pairCounts[pairStr] = (pairCounts[pairStr] || 0) + 1;
+            }
+        }
+    });
+    const sortedBundles = Object.entries(pairCounts).map(([pair, count]) => ({ pair, count })).sort((a, b) => b.count - a.count).slice(0, 3);
+
+    // Categories array
+    const catData = Object.entries(catRev).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
+
+    // Channels
+    const chanMap = {};
+    s30d.filter(s => s.status !== 'cancelled').forEach(s => {
+        const c = s.payment_method || 'POS';
+        if (!chanMap[c]) chanMap[c] = { rev: 0, ord: 0 };
+        chanMap[c].rev += (s.final_total || s.total_amount || 0);
+        chanMap[c].ord++;
+    });
+    const chanData = Object.entries(chanMap).map(([channel, data]) => ({
+        channel,
+        revenue: data.rev,
+        orders: data.ord,
+        aov: data.ord > 0 ? data.rev / data.ord : 0
+    })).sort((a, b) => b.revenue - a.revenue);
+
+    // Products
+    const sortedRev = Object.entries(prodRev).map(([name, rev]) => ({ name, rev })).sort((a, b) => b.rev - a.rev).slice(0, 5);
+    const sortedVol = Object.entries(prodVol).map(([name, vol]) => ({ name, vol })).sort((a, b) => b.vol - a.vol).slice(0, 5);
+
+    // Customer Intelligence
+    let repeatCount = 0;
+    let orderCounts = { one: 0, two: 0, multi: 0 };
+    let totalClv = 0;
+    let custMap = {};
+
+    // Calculate off all time to get true repeat
+    sAll.filter(s => s.status !== 'cancelled').forEach(s => {
+        const cid = s.customer_id || s.customer_name || 'Guest';
+        if (!custMap[cid]) custMap[cid] = { orders: 0, spent: 0 };
+        custMap[cid].orders++;
+        custMap[cid].spent += (s.final_total || s.total_amount || 0);
+    });
+
+    const definedCustNames = Object.keys(custMap).filter(k => k !== 'Guest');
+    definedCustNames.forEach(cid => {
+        const c = custMap[cid];
+        if (c.orders > 1) repeatCount++;
+        if (c.orders === 1) orderCounts.one++;
+        else if (c.orders === 2) orderCounts.two++;
+        else orderCounts.multi++;
+        totalClv += c.spent;
+    });
+
+    const trueRepeatRate = definedCustNames.length > 0 ? (repeatCount / definedCustNames.length) * 100 : 0;
+    const avgClv = definedCustNames.length > 0 ? (totalClv / definedCustNames.length) : 0;
+
+    // Trend Visuals & Heatmap
+    // We will do 30D for the initial payload. We create a map of YYYY-MM-DD
+    const trendMap = {};
+    const heatmap = { '0': {}, '1': {}, '2': {}, '3': {}, '4': {}, '5': {}, '6': {} }; // 0=Sun
+    for (let d = 0; d < 7; d++) {
+        for (let h = 0; h < 24; h++) heatmap[d][h] = 0;
+    }
+
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const ymd = d.toISOString().split('T')[0];
+        trendMap[ymd] = { rev: 0, vol: 0 };
+    }
+
+    // Process all 30d for Trends & Heatmap
+    s30d.filter(s => s.status !== 'cancelled').forEach(s => {
+        const d = new Date(s.sale_date || s.created_at);
+        const ymd = d.toISOString().split('T')[0];
+
+        const saleRev = (s.final_total || s.total_amount || 0);
+        if (trendMap[ymd]) {
+            trendMap[ymd].rev += saleRev;
+            // Get vol logic. We have to map sale items again
+            let v = items30.filter(si => si.sale_id === s.id).reduce((sum, si) => sum + si.quantity, 0);
+            trendMap[ymd].vol += v;
+        }
+
+        // Heatmap populator
+        const day = d.getDay(); // 0-6
+        const hr = d.getHours(); // 0-23
+        heatmap[day][hr]++;
+    });
+
+    // Arrays for charts
+    const trendLabels = Object.keys(trendMap);
+    const trendRev = trendLabels.map(k => trendMap[k].rev);
+    const trendVol = trendLabels.map(k => trendMap[k].vol);
+
+    // Alerts
+    const alerts = [];
+    if (sortedRev.length > 0 && sortedRev[0].rev > 0 && rev30 > 0) {
+        if ((sortedRev[0].rev / rev30) > 0.4) {
+            alerts.push({ type: 'warning', icon: 'fa-triangle-exclamation', text: `40%+ Revenue bergantung pada produk <b>${sortedRev[0].name}</b>` });
+        }
+    }
+    if (chanData.length > 0 && chanData[0].orders > 0) {
+        alerts.push({ type: 'primary', icon: 'fa-bolt', text: `Channel <b>${chanData[0].channel}</b> mensponsori ${chanData[0].orders} orders.` });
+    }
+    if (refundRate > 5) {
+        alerts.push({ type: 'danger', icon: 'fa-rotate-left', text: `Tingkat pembatalan/refund tinggi (${refundRate.toFixed(1)}%). Segera cek kualitas.` });
+    }
+    if (sortedBundles.length > 0) {
+        alerts.push({ type: 'success', icon: 'fa-boxes-packing', text: `Pelanggan sering membeli <b>${sortedBundles[0].pair}</b> bersamaan.` });
+    }
+
+    // Pre-process Smart Database (latest 100 sales)
+    const smartDb = s30d.sort((a, b) => new Date(b.sale_date || b.created_at) - new Date(a.sale_date || a.created_at)).slice(0, 100).map(s => {
+        // compute cogs from items
+        const is = items30.filter(si => si.sale_id === s.id);
+        const cogs = is.reduce((sum, si) => sum + ((si.hpp || 0) * si.quantity), 0);
+        const rev = s.final_total || s.total_amount || 0;
+        const prof = rev - cogs;
+        const margin = rev > 0 ? (prof / rev) * 100 : 0;
+        const qty = is.reduce((sum, si) => sum + si.quantity, 0);
+        const prodNames = is.map(si => pMap[si.product_id] ? pMap[si.product_id].name : 'Unknown').join(', ');
+
+        return {
+            id: s.id,
+            date: s.sale_date || s.created_at,
+            trx: s.receipt_no || '-',
+            products: prodNames,
+            qty: qty,
+            price: rev,
+            discount: s.discount_amount || 0,
+            cogs: cogs,
+            profit: prof,
+            margin: margin,
+            channel: s.payment_method || 'POS',
+            customer: s.customer_name || 'Guest',
+            status: s.status || 'completed'
+        }
+    });
+
+    const result = {
+        overview: { rev30, revGrowth, ord30, units30, aov, repeatRate: trueRepeatRate, refundRate, projectedRev },
+        realtime: { rev60m, ord60m },
+        alerts: alerts,
+        trends: { labels: trendLabels, rev: trendRev, vol: trendVol, heatmap: heatmap },
+        composition: {
+            category: { labels: catData.map(c => c.label), data: catData.map(c => c.value) },
+            channel: chanData
+        },
+        product: { topRev: sortedRev, topVol: sortedVol, bundles: sortedBundles },
+        customer: {
+            ordersCounts: [orderCounts.one, orderCounts.two, orderCounts.multi],
+            clv: avgClv
+        },
+        database: smartDb
+    };
+
+    _iCacheSet(cacheKey, result, 30000); // 30 sec TTL
+    return result;
+}
+window.bizSalesIntelligence = bizSalesIntelligence;
+
+// ── 9. Global Command Intelligence (BizOS Engine) ────────────────────────────
+async function bizHealthScoreAnalytics(businessId) {
+    const cacheKey = 'biz_health_radar_' + businessId;
+    const cached = _iCacheGet(cacheKey);
+    // if (cached) return cached;
+
+    // We fetch derived data by leveraging our other engines to avoid repeating reduction logic
+    // But since this runs on Dashboard mount, we must make sure these run in parallel super fast.
+    const [salesData, invData, profData] = await Promise.all([
+        typeof bizSalesIntelligence === 'function' ? bizSalesIntelligence(businessId) : null,
+        typeof bizInventoryIntelligence === 'function' ? bizInventoryIntelligence(businessId) : null,
+        typeof bizCalculateProfitMargin === 'function' ? bizCalculateProfitMargin(businessId) : null,
+    ]);
+
+    if (!salesData || !invData || !profData) return null;
+
+    // 1. Revenue Growth Score (0-100)
+    // growth cap at 100%
+    const rgRaw = salesData.overview.revGrowth || 0;
+    let revScore = 50 + (rgRaw * 0.5); // flat 0% = 50.
+    if (revScore > 100) revScore = 100;
+    if (revScore < 0) revScore = 0;
+
+    // 2. Profit Margin Score (0-100)
+    // 30% margin is considered "100" in this scale
+    const pmRaw = profData.marginPct || 0;
+    let profScore = (pmRaw / 30) * 100;
+    if (profScore > 100) profScore = 100;
+    if (profScore < 0) profScore = 0;
+
+    // 3. Inventory Health (0-100)
+    // Ratio of Dead Stock to Total Stock
+    const totalProd = invData.overview.totalProducts || 1;
+    const deadCount = invData.overview.deadStock || 0;
+    const invScoreRaw = 100 - ((deadCount / totalProd) * 100);
+    let invScore = invScoreRaw;
+    if (invScore < 0) invScore = 0;
+
+    // 4. Cashflow Stability (0-100)
+    // Derived from Runway if we had fixed expenses. For UMKM, we look at Cash balance vs month Revenue
+    const cashBal = profData.cashBalance || 0;
+    const rev30 = salesData.overview.rev30 || 1;
+    // Ratio: cash on hand vs 1 month of revenue. 1:1 is 100 score.
+    let cashScore = (cashBal / rev30) * 100;
+    if (cashScore > 100) cashScore = 100;
+    if (cashScore < 0) cashScore = 0;
+
+    // 5. Customer Loyalty (0-100)
+    // Repeat rate directly
+    const rrRaw = salesData.overview.repeatRate || 0;
+    // 50% repeat rate = 100 score
+    let loyalScore = (rrRaw / 50) * 100;
+    if (loyalScore > 100) loyalScore = 100;
+    if (loyalScore < 0) loyalScore = 0;
+
+    // Overall Calculation
+    const totalScore = Math.round((revScore + profScore + invScore + cashScore + loyalScore) / 5);
+    let status = 'KRITIS';
+    if (totalScore >= 80) status = 'SEHAT SEKALI';
+    else if (totalScore >= 60) status = 'SEHAT';
+    else if (totalScore >= 40) status = 'WASPADA';
+
+    const result = {
+        axes: {
+            revenue: Math.round(revScore),
+            profit: Math.round(profScore),
+            inventory: Math.round(invScore),
+            cashflow: Math.round(cashScore),
+            customer: Math.round(loyalScore)
+        },
+        raw: { growth: rgRaw, margin: pmRaw, deadStock: deadCount, repeat: rrRaw },
+        score: totalScore,
+        status: status
+    };
+
+    _iCacheSet(cacheKey, result, 60000); // 1 minute TTL for radar
+    return result;
+}
+window.bizHealthScoreAnalytics = bizHealthScoreAnalytics;
+
+async function bizGenerateGlobalInsights(businessId) {
+    const cacheKey = 'biz_global_cfo_' + businessId;
+    const cached = _iCacheGet(cacheKey);
+    // if (cached) return cached;
+
+    const [sales, inv, prof, radar] = await Promise.all([
+        typeof bizSalesIntelligence === 'function' ? bizSalesIntelligence(businessId) : null,
+        typeof bizInventoryIntelligence === 'function' ? bizInventoryIntelligence(businessId) : null,
+        typeof bizCalculateProfitMargin === 'function' ? bizCalculateProfitMargin(businessId) : null,
+        bizHealthScoreAnalytics(businessId)
+    ]);
+
+    if (!sales || !inv || !prof || !radar) return [];
+
+    const insights = [];
+
+    // CFO Insight 1: Sales / Revenue Growth
+    if (sales.overview.revGrowth > 10) {
+        insights.push({ icon: '💡', text: `Revenue bisnis naik stabil (+${sales.overview.revGrowth.toFixed(1)}%). Pertahankan momentum!` });
+    } else if (sales.overview.revGrowth < -10) {
+        insights.push({ icon: '📉', text: `Penjualan turun ${Math.abs(sales.overview.revGrowth).toFixed(1)}%. Coba buat promo atau bundling baru.` });
+    }
+
+    // CFO Insight 2: Profit Margin Trap
+    if (prof.marginPct > 0 && prof.marginPct < 15) {
+        insights.push({ icon: '⚠', text: `Margin profit rata-rata kamu hanya ${prof.marginPct.toFixed(1)}%. Evaluasi harga jual atau COGS agar bisnis tetap bernapas.` });
+    } else if (prof.marginPct >= 30) {
+        insights.push({ icon: '💰', text: `Margin profit bisnis sangat bagus (>30%). Margin tebal membuat bisnis aman dari krisis.` });
+    }
+
+    // CFO Insight 3: Inventory Leaks
+    if (inv.overview.deadStock > 0) {
+        insights.push({ icon: '📦', text: `Ada ${inv.overview.deadStock} produk berstatus Dead-Stock (>90 hari tidak laku). Segera obral agar uang kembali.` });
+    }
+    if (inv.overview.lowStock > 0) {
+        insights.push({ icon: '⚡', text: `${inv.overview.lowStock} produk terlaris mulai kehabisan stok. Segera restock sebelum kehabisan!` });
+    }
+
+    // CFO Insight 4: Customer Retention
+    if (sales.overview.repeatRate > 30) {
+        insights.push({ icon: '🔁', text: `${sales.overview.repeatRate.toFixed(1)}% pelanggan rutin belanja kembali. Loyalitas pelanggan terbangun kuat!` });
+    } else if (sales.overview.repeatRate < 10) {
+        insights.push({ icon: '👥', text: `Pelanggan repeat order sangat rendah (${sales.overview.repeatRate.toFixed(1)}%). Tawarkan voucher next-order!` });
+    }
+
+    // CFO Insight 5: Product Bundling
+    if (sales.product.bundles && sales.product.bundles.length > 0) {
+        insights.push({ icon: '🎁', text: `Pelanggan sering membeli <b>${sales.product.bundles[0].pair}</b>. Jadikan menu bundling permanen untuk naikkan AOV.` });
+    }
+
+    _iCacheSet(cacheKey, insights, 60000); // 1 min TTL
+    return insights;
+}
+window.bizGenerateGlobalInsights = bizGenerateGlobalInsights;

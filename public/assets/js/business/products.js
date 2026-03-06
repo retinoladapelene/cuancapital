@@ -169,105 +169,308 @@ window.bizSaveProduct = bizSaveProduct;
 async function bizLoadProducts() {
     const container = document.getElementById('biz-app-container');
     if (!container) return;
-    document.getElementById('biz-page-title')?.setAttribute('textContent', 'Produk');
 
-    const products = await BizDB.products.getAll();
-    const active = products.filter(p => p.is_active !== false);
+    container.innerHTML = `<div class="biz-page"><div class="biz-loading" style="padding:40px;text-align:center"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--biz-primary)"></i><br><br>Memuat Product Intelligence...</div></div>`;
 
-    container.innerHTML = `<div class="biz-page">
-        <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
-            <div class="biz-search-bar" style="flex:1;margin:0">
-                <i class="fas fa-search"></i>
-                <input type="text" id="prod-search" placeholder="Cari produk..." oninput="prodFilter(this.value)">
-            </div>
-            <button class="biz-btn biz-btn-primary biz-btn-sm" onclick="bizOpenAddProduct()">
-                <i class="fas fa-plus"></i> Tambah
-            </button>
-        </div>
+    const bizId = window.bizState.businessId;
+    const prodData = typeof bizProductIntelligence === 'function' ? await bizProductIntelligence(bizId) : null;
 
-        <div class="biz-chips" style="margin-bottom:14px">
-            <span class="biz-chip active" onclick="prodSetFilter(this,'all')">Semua</span>
-            <span class="biz-chip" onclick="prodSetFilter(this,'physical')">Fisik</span>
-            <span class="biz-chip" onclick="prodSetFilter(this,'digital')">Digital</span>
-            <span class="biz-chip" onclick="prodSetFilter(this,'service')">Jasa</span>
-        </div>
+    window._prodSysData = prodData;
 
-        <div id="prod-grid" class="biz-product-grid"></div>
-    </div>`;
-
-    window._productsData = active;
-    window._prodTypeFilter = 'all';
-    prodFilter('');
-}
-
-function prodSetFilter(el, type) {
-    document.querySelectorAll('#biz-app-container .biz-chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-    window._prodTypeFilter = type;
-    prodFilter(document.getElementById('prod-search')?.value || '');
-}
-let _prodListDisplayLimit = 30;
-function prodFilter(q, append = false) {
-    const grid = document.getElementById('prod-grid');
-    if (!grid) return;
-    if (!append) _prodListDisplayLimit = 30;
-
-    let list = window._productsData || [];
-    if (window._prodTypeFilter && window._prodTypeFilter !== 'all') list = list.filter(p => p.type === window._prodTypeFilter);
-    if (q) list = list.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
-
-    if (!list.length) { grid.innerHTML = '<div class="biz-empty" style="grid-column:1/-1"><i class="fas fa-box-open"></i><br>Belum ada produk</div>'; return; }
-
-    const isFullRender = !append;
-    const startIdx = isFullRender ? 0 : _prodListDisplayLimit - 30;
-    const renderList = list.slice(startIdx, _prodListDisplayLimit);
-
-    const html = renderList.map(p => {
-        const margin = p.price_sell > 0 ? ((p.price_sell - (p.hpp || 0)) / p.price_sell * 100).toFixed(0) : 0;
-        let stockBadge = '';
-        if (p.type === 'physical') {
-            const cls = p.stock <= 0 ? 'out' : p.stock <= (p.low_stock_alert || 5) ? 'low' : 'ok';
-            const ico = cls === 'out' ? 'fa-circle-xmark' : cls === 'low' ? 'fa-circle-exclamation' : 'fa-circle-check';
-            stockBadge = `<div class="biz-stock-badge ${cls}"><i class="fas ${ico}"></i> Stok: ${p.stock}</div>`;
-        }
-        return `<div class="biz-product-card" onclick="bizOpenEditProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})">
-            <div class="biz-product-icon"><i class="fas ${p.type === 'service' ? 'fa-handshake' : p.type === 'digital' ? 'fa-file-code' : 'fa-box'}"></i></div>
-            <div class="biz-product-name">${_esc(p.name)}</div>
-            <div class="biz-product-price">${bizRp(p.price_sell)}</div>
-            <div class="biz-product-meta">HPP: ${bizRp(p.hpp || 0)} · Margin: ${margin}%</div>
-            ${stockBadge}
-        </div>`;
-    }).join('');
-
-    const hasMore = list.length > _prodListDisplayLimit;
-    const sentinelHtml = hasMore ? `<div id="prod-sentinel" style="grid-column:1/-1;text-align:center;padding:24px"><div class="biz-loading"><i class="fas fa-spinner fa-spin"></i> Memuat...</div></div>` : '';
-
-    if (isFullRender) {
-        grid.innerHTML = html + sentinelHtml;
-    } else {
-        const oldSentinel = document.getElementById('prod-sentinel');
-        if (oldSentinel) oldSentinel.remove();
-        grid.insertAdjacentHTML('beforeend', html + sentinelHtml);
+    if (!prodData) {
+        container.innerHTML = `<div class="biz-empty"><i class="fas fa-box-open"></i><br>Data produk tidak tersedia.</div>`;
+        return;
     }
 
-    if (hasMore) _attachProdObserver(q);
+    container.innerHTML = `<div class="biz-page" style="padding-bottom:100px;">
+        <div class="biz-section-header" style="margin-bottom:16px; border-bottom:1px solid var(--biz-border); padding-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h2 class="biz-page-title" style="font-size:22px;letter-spacing:-0.5px">Product Intelligence</h2>
+                <div style="font-size:13px;color:var(--biz-text-dim);font-weight:600;margin-top:2px">SaaS Level Commercial Analytics</div>
+            </div>
+            <button class="biz-btn biz-btn-primary" onclick="bizOpenAddProduct()"><i class="fas fa-plus"></i> Tambah</button>
+        </div>
+
+        <!-- Layer 1: Product Overview (KPIs) -->
+        <div id="prod-layer-1" style="margin-bottom:24px;"></div>
+
+        <!-- Layer 2: Product Alerts -->
+        <div id="prod-layer-2" style="margin-bottom:24px;"></div>
+
+        <!-- Layer 3: AI Product Insights -->
+        <div id="prod-layer-3" style="margin-bottom:24px;"></div>
+
+        <!-- Layer 4: Product Analytics -->
+        <div id="prod-layer-4" class="prod-chart-lazy" style="min-height:300px; margin-bottom:24px;">
+             <div class="biz-loading" style="padding:20px"><i class="fas fa-spinner fa-spin"></i> Memuat Visualisasi...</div>
+        </div>
+
+        <!-- Layer 5: Product Database (Virtualized Table) -->
+        <div class="biz-card" style="margin-bottom:24px;overflow:hidden">
+            <div class="biz-card-header" style="padding:16px;background:var(--biz-surface-2);border-bottom:1px solid var(--biz-border);display:flex;justify-content:space-between;align-items:center">
+                <div class="biz-card-title"><i class="fas fa-database" style="color:var(--biz-primary)"></i> Product Database</div>
+            </div>
+            <div style="padding:12px 16px;border-bottom:1px solid var(--biz-border)">
+                <div class="biz-search-bar" style="margin:0">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="prod-smart-search" placeholder="Cari SKU, Nama, atau Status LifeCycle..." oninput="prodRenderChunk(0, this.value)">
+                </div>
+            </div>
+            
+            <div style="overflow-x:auto;">
+                <table style="width:100%;text-align:left;border-collapse:collapse;min-width:900px">
+                    <thead style="background:var(--biz-surface-2);font-size:11px;font-weight:700;color:var(--biz-text-dim);text-transform:uppercase;letter-spacing:0.5px">
+                        <tr>
+                            <th style="padding:12px 16px">Produk</th>
+                            <th style="padding:12px 16px;text-align:right">Harga Jual</th>
+                            <th style="padding:12px 16px;text-align:right">Margin %</th>
+                            <th style="padding:12px 16px;text-align:right">Penjualan (30D)</th>
+                            <th style="padding:12px 16px;text-align:right">Revenue (30D)</th>
+                            <th style="padding:12px 16px;text-align:right">Profit (30D)</th>
+                            <th style="padding:12px 16px;text-align:center">Lifecycle</th>
+                            <th style="padding:12px 16px;text-align:right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prod-table-body">
+                        <!-- Virtualized rows here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="prod-table-footer" style="padding:12px;text-align:center;font-size:12px;color:var(--biz-text-dim);background:var(--biz-surface-2)"></div>
+        </div>
+    </div>`;
+
+    setTimeout(() => {
+        _prodRenderLayer1();
+        _prodRenderLayer2();
+        _prodRenderLayer3();
+        prodRenderChunk(0, '');
+        prodSetupLazyRendering();
+    }, 50);
 }
 
-let _prodObserver = null;
-function _attachProdObserver(q) {
-    if (_prodObserver) _prodObserver.disconnect();
-    const sentinel = document.getElementById('prod-sentinel');
-    if (!sentinel) return;
-    _prodObserver = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting) {
-            _prodObserver.disconnect();
-            _prodListDisplayLimit += 30;
-            setTimeout(() => prodFilter(q, true), 50);
-        }
-    }, { rootMargin: '200px' });
-    _prodObserver.observe(sentinel);
+function _prodRenderLayer1() {
+    const { stats } = window._prodSysData;
+    const html = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+        <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">TOTAL PRODUK</div><div style="font-size:20px;font-weight:800;margin-top:4px">${stats.totalProducts}</div></div>
+        <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">REVENUE 30D</div><div style="font-size:20px;font-weight:800;color:var(--biz-primary);margin-top:4px">${bizRpFull(stats.totalRev30d)}</div></div>
+        <div class="biz-card" style="padding:16px;border:1px solid rgba(16,185,129,0.2)"><div style="font-size:11px;color:var(--biz-success);font-weight:700">MARGIN TINGGI</div><div style="font-size:20px;font-weight:800;color:var(--biz-success);margin-top:4px">${stats.highMargin}</div></div>
+        <div class="biz-card" style="padding:16px;border:1px solid rgba(239,68,68,0.2)"><div style="font-size:11px;color:var(--biz-danger);font-weight:700">MARGIN TIPIS (<10%)</div><div style="font-size:20px;font-weight:800;color:var(--biz-danger);margin-top:4px">${stats.lowMargin}</div></div>
+        <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">TOP SELLER</div><div style="font-size:14px;font-weight:800;color:var(--biz-warning);margin-top:8px">${_esc(stats.topSellerName)}</div></div>
+        <div class="biz-card" style="padding:16px;border:1px solid rgba(139,92,246,0.2)"><div style="font-size:11px;color:var(--biz-purple);font-weight:700">PRODUK STAGNAN</div><div style="font-size:20px;font-weight:800;color:var(--biz-purple);margin-top:4px">${stats.stagnant}</div></div>
+    </div>`;
+    document.getElementById('prod-layer-1').innerHTML = html;
+}
+
+function _prodRenderLayer2() {
+    const { alerts } = window._prodSysData;
+    let html = '';
+    if (alerts && alerts.length > 0) {
+        html = `<div class="biz-card" style="border:1px solid rgba(239,68,68,0.3);background:var(--biz-danger-bg)">
+            <div style="padding:12px 16px;font-size:11px;font-weight:800;color:var(--biz-danger);letter-spacing:0.5px;border-bottom:1px solid rgba(239,68,68,0.1)">
+                <i class="fas fa-bell"></i> SYSTEM ALERTS
+            </div>
+            <div style="padding:12px 16px">
+                ${alerts.map(a => `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:8px">
+                    <i class="fas ${a.icon}" style="color:var(--biz-${a.type});margin-top:3px;font-size:14px"></i>
+                    <span style="font-size:13px;font-weight:600;color:var(--biz-text)">${a.text}</span>
+                </div>`).join('')}
+            </div>
+        </div>`;
+    }
+    document.getElementById('prod-layer-2').innerHTML = html;
+}
+
+function _prodRenderLayer3() {
+    const { insights } = window._prodSysData;
+    let html = '';
+    if (insights && insights.length > 0) {
+        html = `<div class="biz-card" style="border:1px solid var(--biz-border-strong);border-left:4px solid var(--biz-primary)">
+            <div style="padding:12px 16px;font-size:11px;font-weight:800;color:var(--biz-primary);letter-spacing:0.5px;border-bottom:1px solid var(--biz-border)">
+                <i class="fas fa-sparkles"></i> AI PRODUCT INSIGHTS
+            </div>
+            <div style="padding:12px 16px">
+                ${insights.map(i => `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:8px">
+                    <i class="fas fa-lightbulb" style="color:var(--biz-success);margin-top:3px;font-size:14px"></i>
+                    <span style="font-size:13px;font-weight:600;color:var(--biz-text)">${i}</span>
+                </div>`).join('')}
+            </div>
+        </div>`;
+    }
+    document.getElementById('prod-layer-3').innerHTML = html;
+}
+
+function prodSetupLazyRendering() {
+    const el = document.getElementById('prod-layer-4');
+    if (!el) return;
+    if (!window.IntersectionObserver) { _prodRenderLayer4(); return; }
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                _prodRenderLayer4();
+                obs.unobserve(entry.target);
+            }
+        });
+    }, { rootMargin: '200px 0px' });
+    observer.observe(el);
+}
+
+function _prodRenderLayer4() {
+    const container = document.getElementById('prod-layer-4');
+    if (typeof Chart === 'undefined') { setTimeout(_prodRenderLayer4, 500); return; }
+
+    container.innerHTML = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-money-bill-wave" style="color:var(--biz-success)"></i> Top 10 Revenue</div></div>
+            <div style="height:220px;position:relative;padding:10px"><canvas id="prodRevChart"></canvas></div>
+        </div>
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-hand-holding-dollar" style="color:var(--biz-primary)"></i> Top 10 Profit</div></div>
+            <div style="height:220px;position:relative;padding:10px"><canvas id="prodProfChart"></canvas></div>
+        </div>
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-warning)"></i> Revenue Concentration</div></div>
+            <div style="height:220px;position:relative;padding:10px"><canvas id="prodConcChart"></canvas></div>
+        </div>
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-tags" style="color:var(--biz-purple)"></i> Margin Distribution</div></div>
+            <div style="height:220px;position:relative;padding:10px"><canvas id="prodMarginChart"></canvas></div>
+        </div>
+    </div>`;
+
+    const ctxRev = document.getElementById('prodRevChart');
+    const ctxProf = document.getElementById('prodProfChart');
+    const ctxConc = document.getElementById('prodConcChart');
+    const ctxMargin = document.getElementById('prodMarginChart');
+
+    if (window.bizProdRevChartInst) window.bizProdRevChartInst.destroy();
+    if (window.bizProdProfChartInst) window.bizProdProfChartInst.destroy();
+    if (window.bizProdConcChartInst) window.bizProdConcChartInst.destroy();
+    if (window.bizProdMarginChartInst) window.bizProdMarginChartInst.destroy();
+
+    const rd = window._prodSysData;
+
+    window.bizProdRevChartInst = new Chart(ctxRev, {
+        type: 'bar',
+        data: { labels: rd.top10Rev.labels, datasets: [{ label: 'Revenue 30D', data: rd.top10Rev.data, backgroundColor: '#10b981', borderRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, indexAxis: 'y', scales: { x: { display: false } } }
+    });
+
+    window.bizProdProfChartInst = new Chart(ctxProf, {
+        type: 'bar',
+        data: { labels: rd.top10Prof.labels, datasets: [{ label: 'Profit 30D', data: rd.top10Prof.data, backgroundColor: '#3b82f6', borderRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, indexAxis: 'y', scales: { x: { display: false } } }
+    });
+
+    window.bizProdConcChartInst = new Chart(ctxConc, {
+        type: 'doughnut',
+        data: { labels: ['Top 5 Products', 'Lainnya'], datasets: [{ data: [rd.concentration.top5, rd.concentration.rest], backgroundColor: ['#f59e0b', '#e5e7eb'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: "'Inter',sans-serif", size: 11 } } } } }
+    });
+
+    window.bizProdMarginChartInst = new Chart(ctxMargin, {
+        type: 'doughnut',
+        data: { labels: ['<10%', '10-20%', '20-30%', '>30%'], datasets: [{ data: [rd.distribution.under10, rd.distribution.tenTo20, rd.distribution.twentyTo30, rd.distribution.over30], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: "'Inter',sans-serif", size: 11 } } } } }
+    });
+}
+
+let _prodChunkPos = 0;
+const _prodChunkSize = 30;
+
+function prodRenderChunk(startIdx, query) {
+    const { products } = window._prodSysData;
+    const tbody = document.getElementById('prod-table-body');
+    const footer = document.getElementById('prod-table-footer');
+    if (!tbody || !products) return;
+
+    if (startIdx === 0) {
+        _prodChunkPos = 0;
+        tbody.innerHTML = '';
+        // scroll removed to avoid jump
+    }
+
+    let filtered = products;
+    if (query) {
+        const q = query.toLowerCase();
+        filtered = products.filter(b =>
+            b.name.toLowerCase().includes(q) ||
+            b.sku.toLowerCase().includes(q) ||
+            b.lifecycle.toLowerCase().includes(q)
+        );
+    }
+
+    const chunk = filtered.slice(startIdx, startIdx + _prodChunkSize);
+
+    if (chunk.length === 0 && startIdx === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--biz-text-muted)"><i class="fas fa-box-open fa-2x"></i><br>Tidak ditemukan produk yang cocok.</td></tr>';
+        footer.innerHTML = '';
+        return;
+    }
+
+    const html = chunk.map(p => {
+        let lCol = p.lifecycle === 'GROWING' ? 'background:var(--biz-info-bg);color:var(--biz-info)' :
+            p.lifecycle === 'NEW' ? 'background:var(--biz-success-bg);color:var(--biz-success)' :
+                p.lifecycle === 'DECLINING' ? 'background:var(--biz-danger-bg);color:var(--biz-danger)' :
+                    'background:var(--biz-surface-2);color:var(--biz-text-dim)';
+
+        let lIcon = p.lifecycle === 'GROWING' ? 'fa-fire' :
+            p.lifecycle === 'NEW' ? 'fa-wand-magic-sparkles' :
+                p.lifecycle === 'DECLINING' ? 'fa-arrow-trend-down' : 'fa-balance-scale';
+
+        let mTxt = p.marginPct < 10 ? 'var(--biz-danger)' : p.marginPct >= 30 ? 'var(--biz-success)' : 'var(--biz-text)';
+
+        return `<tr style="border-bottom:1px solid var(--biz-border);transition:all 0.2s">
+            <td style="padding:12px 16px">
+                <div style="font-weight:700;font-size:13px;color:var(--biz-text)">${_esc(p.name)}</div>
+                <div style="font-size:11px;color:var(--biz-text-muted);margin-top:2px">${_esc(p.sku)}</div>
+            </td>
+            <td style="padding:12px 16px;text-align:right">
+                <span style="font-size:13px;font-weight:700">${bizRp(p.price)}</span>
+                <div style="font-size:10px;color:var(--biz-text-muted);margin-top:2px">HPP: ${bizRp(p.hpp)}</div>
+            </td>
+            <td style="padding:12px 16px;text-align:right">
+                <span style="font-size:13px;font-weight:800;color:${mTxt}">${p.marginPct}%</span>
+            </td>
+            <td style="padding:12px 16px;text-align:right">
+                <div style="font-weight:700;font-size:13px">${p.sold30d} <span style="font-size:10px;color:var(--biz-text-dim)">pcs</span></div>
+                <div style="font-size:10px;color:var(--biz-text-muted);margin-top:2px">${p.avgDaily} / hr</div>
+            </td>
+            <td style="padding:12px 16px;text-align:right">
+                <div style="font-weight:700;font-size:13px;color:var(--biz-success)">${bizRpFull(p.rev30d)}</div>
+            </td>
+            <td style="padding:12px 16px;text-align:right">
+                <div style="font-weight:700;font-size:13px;color:var(--biz-primary)">${bizRpFull(p.prof30d)}</div>
+            </td>
+            <td style="padding:12px 16px;text-align:center">
+                <span style="display:inline-block;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:800;${lCol}">
+                    <i class="fas ${lIcon}" style="margin-right:2px"></i> ${p.lifecycle}
+                </span>
+            </td>
+            <td style="padding:12px 16px;text-align:right">
+                <button class="biz-btn biz-btn-ghost biz-btn-sm" onclick="bizOpenEditAction('${p.id}')" title="Edit Produk"><i class="fas fa-pencil"></i></button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    tbody.insertAdjacentHTML('beforeend', html);
+    _prodChunkPos = startIdx + _prodChunkSize;
+
+    if (_prodChunkPos < filtered.length) {
+        footer.innerHTML = `<button class="biz-btn biz-btn-ghost" style="width:100%" onclick="prodRenderChunk(${_prodChunkPos}, document.getElementById('prod-smart-search').value)">Load More (${filtered.length - _prodChunkPos} produk tersisa)</button>`;
+    } else {
+        footer.innerHTML = `Menampilkan seluruh ${filtered.length} produk.`;
+    }
+}
+
+async function bizOpenEditAction(id) {
+    const products = await BizDB.products.getAll();
+    const p = products.find(prod => prod.id === id);
+    if (p) bizOpenEditProduct(p);
 }
 
 window.bizLoadProducts = bizLoadProducts;
-window.prodFilter = prodFilter;
-window.prodSetFilter = prodSetFilter;
+window.prodRenderChunk = prodRenderChunk;
+window.bizOpenEditAction = bizOpenEditAction;

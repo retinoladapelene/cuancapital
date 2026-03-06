@@ -253,88 +253,358 @@ window.posOnSearch = posOnSearch; window.posAddProduct = posAddProduct;
 window.posChangeQty = posChangeQty; window.posRemoveItem = posRemoveItem;
 window.posSetPay = posSetPay; window.posSave = posSave;
 
-// ── Sales List ───────────────────────────────────────────────────────────────
+// ── Sales Intelligence List (8-Layer Command Center) ───────────────────────
 async function bizLoadSales() {
     const container = document.getElementById('biz-app-container');
     if (!container) return;
-    document.getElementById('biz-page-title')?.setAttribute('textContent', 'Penjualan');
 
-    const [sales, items] = await Promise.all([BizDB.sales.getAll(), BizDB.saleItems.getAll()]);
-    const sorted = sales.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    container.innerHTML = `<div class="biz-page"><div class="biz-loading" style="padding:40px;text-align:center"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--biz-primary)"></i><br><br>Memuat Sales Command Center...</div></div>`;
 
-    container.innerHTML = `<div class="biz-page">
-        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-            <button class="biz-btn biz-btn-primary" onclick="bizOpenModal('biz-modal-pos-cart');posRenderCart()">
-                <i class="fas fa-cart-shopping"></i> POS Cart
-            </button>
-            <button class="biz-btn biz-btn-ghost" onclick="bizOpenModal('biz-modal-quick-sale')">
-                <i class="fas fa-bolt"></i> Quick Sale
-            </button>
+    const bizId = window.bizState.businessId;
+    const salesData = typeof bizSalesIntelligence === 'function' ? await bizSalesIntelligence(bizId) : null;
+
+    window._salesSysData = salesData;
+
+    if (!salesData) {
+        container.innerHTML = `<div class="biz-empty"><i class="fas fa-receipt"></i><br>Data penjualan tidak tersedia.</div>`;
+        return;
+    }
+
+    container.innerHTML = `<div class="biz-page" style="padding-bottom:100px;">
+        <div class="biz-section-header" style="margin-bottom:16px; border-bottom:1px solid var(--biz-border); padding-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+                <h2 class="biz-page-title" style="font-size:22px;letter-spacing:-0.5px">Sales Command Center</h2>
+                <div style="font-size:13px;color:var(--biz-text-dim);font-weight:600;margin-top:2px">Operational Analytics & Revenue Tracking</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button class="biz-btn biz-btn-ghost biz-btn-sm" onclick="bizOpenModal('biz-modal-pos-cart');posRenderCart()"><i class="fas fa-cart-shopping"></i> POS</button>
+                <button class="biz-btn biz-btn-primary biz-btn-sm" onclick="bizOpenModal('biz-modal-quick-sale')"><i class="fas fa-bolt"></i> Quick Sale</button>
+            </div>
         </div>
 
-        <div class="biz-search-bar" style="margin-bottom:10px">
-            <i class="fas fa-search"></i>
-            <input type="text" id="sales-search" placeholder="Cari penjualan..." oninput="salesFilter(this.value)">
+        <!-- Layer 1: Overview KPIs -->
+        <div id="sales-layer-1" style="margin-bottom:24px;"></div>
+
+        <!-- Layer 2 & 3: Pulse & Alerts (Grid side by side on desktop) -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom:24px;">
+            <div id="sales-layer-2"></div>
+            <div id="sales-layer-3"></div>
         </div>
 
-        <div class="biz-summary-strip" id="sales-strip">
-            <div class="biz-strip-item"><div class="biz-strip-label">Total</div><div class="biz-strip-value" id="s-total-rev">Rp 0</div></div>
-            <div class="biz-strip-item"><div class="biz-strip-label">Profit</div><div class="biz-strip-value" id="s-total-profit" style="color:var(--biz-success)">Rp 0</div></div>
-            <div class="biz-strip-item"><div class="biz-strip-label">Transaksi</div><div class="biz-strip-value" id="s-count">0</div></div>
+        <!-- Layer 4, 5, 6, 7: Charts (Lazy loaded container) -->
+        <div id="sales-chart-container" class="sales-chart-lazy" style="min-height:300px; margin-bottom:24px;">
+             <div class="biz-loading" style="padding:20px"><i class="fas fa-spinner fa-spin"></i> Memuat Visualisasi Penjualan...</div>
         </div>
 
-        <div id="sales-list"></div>
+        <!-- Layer 8: Smart Sales Database (Virtualized Table) -->
+        <div class="biz-card" style="margin-bottom:24px;overflow:hidden">
+            <div class="biz-card-header" style="padding:16px;background:var(--biz-surface-2);border-bottom:1px solid var(--biz-border);display:flex;justify-content:space-between;align-items:center">
+                <div class="biz-card-title"><i class="fas fa-database" style="color:var(--biz-primary)"></i> Transaction Database (Last 100)</div>
+            </div>
+            <div style="padding:12px 16px;border-bottom:1px solid var(--biz-border)">
+                <div class="biz-search-bar" style="margin:0">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="sales-smart-search" placeholder="Cari No TRX, Produk, atau Metode Bayar..." oninput="salesRenderChunk(0, this.value)">
+                </div>
+            </div>
+            
+            <div style="overflow-x:auto;">
+                <table style="width:100%;text-align:left;border-collapse:collapse;min-width:1000px">
+                    <thead style="background:var(--biz-surface-2);font-size:11px;font-weight:700;color:var(--biz-text-dim);text-transform:uppercase;letter-spacing:0.5px">
+                        <tr>
+                            <th style="padding:12px 16px">Transaksi</th>
+                            <th style="padding:12px 16px">Produk (Qty)</th>
+                            <th style="padding:12px 16px;text-align:right">Revenue</th>
+                            <th style="padding:12px 16px;text-align:right">Profit / Margin</th>
+                            <th style="padding:12px 16px;text-align:right">Metode</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-table-body">
+                        <!-- Virtualized rows here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="sales-table-footer" style="padding:12px;text-align:center;font-size:12px;color:var(--biz-text-dim);background:var(--biz-surface-2)"></div>
+        </div>
     </div>`;
 
-    // Attach sales data for filtering
-    window._salesData = sorted;
-    salesFilter('');
+    setTimeout(() => {
+        _salesRenderLayer1();
+        _salesRenderLayer2();
+        _salesRenderLayer3();
+        salesRenderChunk(0, '');
+        _salesSetupLazyRendering();
+    }, 50);
 }
 
-function salesFilter(q) {
-    const list = document.getElementById('sales-list');
-    if (!list) return;
-    const all = window._salesData || [];
-    const filt = q ? all.filter(s => s.id.toLowerCase().includes(q.toLowerCase())) : all;
-    const totalRev = filt.reduce((s, r) => s + (r.total_amount || 0), 0);
-    const totalPro = filt.reduce((s, r) => s + (r.total_profit || 0), 0);
+function _salesRenderLayer1() {
+    const { overview } = window._salesSysData;
+    const growthColor = overview.revGrowth > 0 ? 'var(--biz-success)' : overview.revGrowth < 0 ? 'var(--biz-danger)' : 'var(--biz-text-dim)';
+    const growthIcon = overview.revGrowth > 0 ? 'fa-arrow-up' : overview.revGrowth < 0 ? 'fa-arrow-down' : 'fa-minus';
+    const refundColor = overview.refundRate > 5 ? 'var(--biz-danger)' : 'var(--biz-text)';
 
-    const tr = document.getElementById('s-total-rev');
-    const tp = document.getElementById('s-total-profit');
-    const sc = document.getElementById('s-count');
-    if (tr) tr.textContent = bizRp(totalRev);
-    if (tp) tp.textContent = bizRp(totalPro);
-    if (sc) sc.textContent = filt.length;
+    document.getElementById('sales-layer-1').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px">
+        <div class="biz-card" style="padding:16px;border:1px solid rgba(16,185,129,0.3)">
+            <div style="font-size:11px;color:var(--biz-success);font-weight:800">REVENUE 30D</div>
+            <div style="font-size:20px;font-weight:800;color:var(--biz-success);margin-top:4px">${bizRpFull(overview.rev30)}</div>
+            <div style="font-size:11px;color:${growthColor};font-weight:700;margin-top:6px"><i class="fas ${growthIcon}"></i> ${Math.abs(overview.revGrowth).toFixed(1)}% vs Prev 30D</div>
+        </div>
+        <div class="biz-card" style="padding:16px">
+            <div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">ORDERS</div>
+            <div style="font-size:20px;font-weight:800;margin-top:4px">${overview.ord30}</div>
+        </div>
+        <div class="biz-card" style="padding:16px">
+            <div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">UNIT TERJUAL</div>
+            <div style="font-size:20px;font-weight:800;margin-top:4px">${overview.units30}</div>
+        </div>
+        <div class="biz-card" style="padding:16px">
+            <div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">AOV (Rata Order)</div>
+            <div style="font-size:18px;font-weight:800;margin-top:4px">${bizRpFull(overview.aov)}</div>
+        </div>
+        <div class="biz-card" style="padding:16px">
+            <div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">REPEAT CUSTOMER</div>
+            <div style="font-size:20px;font-weight:800;color:var(--biz-primary);margin-top:4px">${overview.repeatRate.toFixed(1)}%</div>
+        </div>
+        <div class="biz-card" style="padding:16px">
+            <div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">CANCEL / REFUND</div>
+            <div style="font-size:20px;font-weight:800;color:${refundColor};margin-top:4px">${overview.refundRate.toFixed(1)}%</div>
+        </div>
+        <div class="biz-card" style="padding:16px;background:var(--biz-surface-2)">
+            <div style="font-size:11px;color:var(--biz-purple);font-weight:800"><i class="fas fa-wand-magic-sparkles"></i> AI PROJECTED</div>
+            <div style="font-size:18px;font-weight:800;color:var(--biz-purple);margin-top:4px">${bizRpFull(overview.projectedRev)}</div>
+            <div style="font-size:10px;color:var(--biz-text-muted);font-weight:600;margin-top:6px">Estimasi bulan ini</div>
+        </div>
+    </div>`;
+}
 
-    if (!filt.length) { list.innerHTML = '<div class="biz-empty"><i class="fas fa-receipt"></i><br>Belum ada penjualan</div>'; return; }
+function _salesRenderLayer2() {
+    const { realtime } = window._salesSysData;
+    const isLive = realtime.ord60m > 0;
+    const pulseHtml = isLive
+        ? `<div style="display:flex;align-items:center;gap:8px;color:var(--biz-success);font-weight:700;font-size:13px"><span class="biz-pulse" style="width:8px;height:8px;background:var(--biz-success);border-radius:50%;display:inline-block"></span> ${realtime.ord60m} orders baru saja masuk.</div>`
+        : `<div style="color:var(--biz-text-muted);font-size:13px;font-weight:600"><i class="fas fa-sleep"></i> Belum ada penjualan direkam di jam ini.</div>`;
 
-    // Group by date
-    const groups = {};
-    filt.forEach(s => { if (!groups[s.sale_date]) groups[s.sale_date] = []; groups[s.sale_date].push(s); });
+    document.getElementById('sales-layer-2').innerHTML = `<div class="biz-card" style="height:100%;border:1px solid var(--biz-border-strong)">
+        <div style="padding:12px 16px;font-size:11px;font-weight:800;color:var(--biz-text);letter-spacing:0.5px;border-bottom:1px solid var(--biz-border);display:flex;justify-content:space-between">
+            <span><i class="fas fa-clock"></i> LAST 60 MINS PULSE</span>
+            <span style="color:var(--biz-danger);animation:fade 1.5s infinite">LIVE</span>
+        </div>
+        <div style="padding:16px">
+            <div style="font-size:24px;font-weight:800;color:var(--biz-text);margin-bottom:8px">${bizRpFull(realtime.rev60m)}</div>
+            ${pulseHtml}
+        </div>
+    </div>`;
+}
 
-    list.innerHTML = Object.entries(groups).map(([date, sls]) => {
-        const dayRev = sls.reduce((a, s) => a + (s.total_amount || 0), 0);
-        return `<div class="biz-date-header">${_fmtDate(date)} · ${bizRp(dayRev)}</div>` +
-            sls.map(s => `<div class="biz-sale-item">
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                    <div>
-                        <div style="font-size:12px;font-weight:700;color:var(--biz-primary)">#${s.id.slice(-6).toUpperCase()}</div>
-                        <div class="biz-sale-meta">${_timeAgo(s.created_at)} · ${_payLabel(s.payment_method)}</div>
-                    </div>
-                    <div style="text-align:right">
-                        <div class="biz-sale-amount">${bizRp(s.total_amount)}</div>
-                        <div class="biz-sale-profit">+${bizRp(s.total_profit)}</div>
-                    </div>
-                </div>
-            </div>`).join('');
+function _salesRenderLayer3() {
+    const { alerts } = window._salesSysData;
+    let listHtml = alerts.length > 0
+        ? alerts.map(a => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px"><i class="fas ${a.icon}" style="color:var(--biz-${a.type});margin-top:2px;font-size:13px"></i><span style="font-size:13px;font-weight:600">${a.text}</span></div>`).join('')
+        : `<div style="color:var(--biz-text-muted);font-size:13px;font-weight:600"><i class="fas fa-check-circle"></i> Tidak ada anomali atau peringatan terbaca.</div>`;
+
+    document.getElementById('sales-layer-3').innerHTML = `<div class="biz-card" style="height:100%;border-left:4px solid var(--biz-warning)">
+        <div style="padding:12px 16px;font-size:11px;font-weight:800;color:var(--biz-warning);letter-spacing:0.5px;border-bottom:1px solid var(--biz-border)">
+            <i class="fas fa-robot"></i> SMART SALES MONITOR
+        </div>
+        <div style="padding:16px">
+            ${listHtml}
+        </div>
+    </div>`;
+}
+
+function _salesSetupLazyRendering() {
+    const el = document.getElementById('sales-chart-container');
+    if (!el) return;
+    if (!window.IntersectionObserver) { _salesRenderCharts(); return; }
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                _salesRenderCharts();
+                obs.unobserve(entry.target);
+            }
+        });
+    }, { rootMargin: '200px 0px' });
+    observer.observe(el);
+}
+
+function _salesRenderCharts() {
+    const container = document.getElementById('sales-chart-container');
+    if (typeof Chart === 'undefined') { setTimeout(_salesRenderCharts, 500); return; }
+
+    container.innerHTML = `
+    <!-- Tren & Komposisi -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:20px; margin-bottom:24px;">
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-line" style="color:var(--biz-primary)"></i> Revenue vs Volume Trend (30D)</div></div>
+            <div style="height:260px;position:relative;padding:10px"><canvas id="salesTrendChart"></canvas></div>
+        </div>
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-warning)"></i> Revenue Composition</div></div>
+            <div style="display:flex;padding:10px;height:260px">
+                <div style="flex:1;position:relative"><div style="text-align:center;font-size:11px;font-weight:700;color:var(--biz-text-dim)">KATEGORI</div><canvas id="salesCatChart"></canvas></div>
+                <div style="flex:1;position:relative"><div style="text-align:center;font-size:11px;font-weight:700;color:var(--biz-text-dim)">CHANNEL</div><canvas id="salesChanChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Produk & Customer -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:20px;">
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-boxes-stacked" style="color:var(--biz-success)"></i> Product Performance</div></div>
+            <div style="height:240px;position:relative;padding:10px"><canvas id="salesProdDualChart"></canvas></div>
+        </div>
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-users" style="color:var(--biz-purple)"></i> Customer Loyalty Frequency</div></div>
+            <div style="height:240px;position:relative;padding:10px"><canvas id="salesFreqChart"></canvas></div>
+        </div>
+    </div>`;
+
+    const sd = window._salesSysData;
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+
+    // 1. Dual Line Trend Chart
+    new Chart(document.getElementById('salesTrendChart'), {
+        type: 'line',
+        data: {
+            labels: sd.trends.labels,
+            datasets: [
+                { label: 'Revenue', data: sd.trends.rev, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', yAxisID: 'y', tension: 0.3, fill: true },
+                { label: 'Units Sold', data: sd.trends.vol, borderColor: '#3b82f6', borderDash: [5, 5], yAxisID: 'y1', tension: 0.3 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { ticks: { maxTicksLimit: 7 }, grid: { display: false } },
+                y: { type: 'linear', display: true, position: 'left', grid: { color: 'rgba(255,255,255,0.05)' } },
+                y1: { type: 'linear', display: true, position: 'right', grid: { display: false } }
+            },
+            plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { family: "'Inter',sans-serif", size: 11 } } } }
+        }
+    });
+
+    // 2. Category Pie
+    new Chart(document.getElementById('salesCatChart'), {
+        type: 'doughnut',
+        data: { labels: sd.composition.category.labels, datasets: [{ data: sd.composition.category.data, backgroundColor: colors, borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
+    });
+
+    // 3. Channel Pie
+    const chanLabels = sd.composition.channel.map(c => c.channel);
+    const chanData = sd.composition.channel.map(c => c.revenue);
+    new Chart(document.getElementById('salesChanChart'), {
+        type: 'doughnut',
+        data: { labels: chanLabels, datasets: [{ data: chanData, backgroundColor: ['#8b5cf6', '#ec4899', '#f59e0b', '#3b82f6'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
+    });
+
+    // 4. Products Dual Bar (Rev vs Vol) using double y-axis
+    new Chart(document.getElementById('salesProdDualChart'), {
+        type: 'bar',
+        data: {
+            labels: sd.product.topRev.map(p => p.name.length > 12 ? p.name.substring(0, 10) + '...' : p.name),
+            datasets: [
+                { label: 'Revenue 30D', data: sd.product.topRev.map(p => p.rev), backgroundColor: '#10b981', yAxisID: 'y', borderRadius: 4 },
+                // Map the volumes corresponding to topRev to keep labels aligned
+                { label: 'Units', data: sd.product.topRev.map(p => { const o = sd.product.topVol.find(v => v.name === p.name); return o ? o.vol : 0; }), backgroundColor: '#3b82f6', yAxisID: 'y1', borderRadius: 4 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { grid: { display: false } },
+                y: { type: 'linear', display: true, position: 'left' },
+                y1: { type: 'linear', display: true, position: 'right', grid: { display: false } }
+            },
+            plugins: { legend: { position: 'top' } }
+        }
+    });
+
+    // 5. Customer Frequency Polar/Pie
+    new Chart(document.getElementById('salesFreqChart'), {
+        type: 'pie',
+        data: { labels: ['1 Order', '2 Orders', '3+ Orders'], datasets: [{ data: sd.customer.ordersCounts, backgroundColor: ['#64748b', '#3b82f6', '#8b5cf6'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+    });
+}
+
+let _salesChunkPos = 0;
+const _salesChunkSize = 25;
+
+function salesRenderChunk(startIdx, query) {
+    const { database } = window._salesSysData;
+    const tbody = document.getElementById('sales-table-body');
+    const footer = document.getElementById('sales-table-footer');
+    if (!tbody || !database) return;
+
+    if (startIdx === 0) {
+        _salesChunkPos = 0;
+        tbody.innerHTML = '';
+    }
+
+    let filtered = database;
+    if (query) {
+        const q = query.toLowerCase();
+        filtered = database.filter(s =>
+            s.trx.toLowerCase().includes(q) ||
+            s.products.toLowerCase().includes(q) ||
+            s.channel.toLowerCase().includes(q) ||
+            s.customer.toLowerCase().includes(q)
+        );
+    }
+
+    const chunk = filtered.slice(startIdx, startIdx + _salesChunkSize);
+
+    if (chunk.length === 0 && startIdx === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding:30px;text-align:center;color:var(--biz-text-muted)"><i class="fas fa-receipt fa-2x"></i><br>Tidak ditemukan transaksi.</td></tr>';
+        footer.innerHTML = '';
+        return;
+    }
+
+    const html = chunk.map(s => {
+        const dStr = new Date(s.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const margTxt = s.margin >= 20 ? 'var(--biz-success)' : s.margin < 10 && s.margin > 0 ? 'var(--biz-warning)' : s.margin <= 0 ? 'var(--biz-danger)' : 'var(--biz-text)';
+        const statIco = s.status === 'completed' ? '<i class="fas fa-circle-check" style="color:var(--biz-success)"></i>' : '<i class="fas fa-circle-xmark" style="color:var(--biz-danger)"></i>';
+
+        return `<tr style="border-bottom:1px solid var(--biz-border);">
+            <td style="padding:12px 16px">
+                <div style="font-weight:700;font-size:13px;color:var(--biz-primary)">#${s.id.slice(-6).toUpperCase()} ${statIco}</div>
+                <div style="font-size:11px;color:var(--biz-text-muted);margin-top:2px">${dStr}</div>
+                <div style="font-size:11px;color:var(--biz-text-dim);margin-top:2px"><i class="fas fa-user"></i> ${_esc(s.customer)}</div>
+            </td>
+            <td style="padding:12px 16px">
+                <div style="font-size:12px;color:var(--biz-text);line-height:1.4;max-width:250px">${_esc(s.products)}</div>
+                <div style="font-weight:700;font-size:11px;color:var(--biz-text-dim);margin-top:4px">${s.qty} unit</div>
+            </td>
+            <td style="padding:12px 16px;text-align:right">
+                <div style="font-size:13px;font-weight:800;color:var(--biz-success)">${bizRp(s.price)}</div>
+                ${s.discount > 0 ? `<div style="font-size:10px;color:var(--biz-danger);margin-top:2px">Disc: -${bizRp(s.discount)}</div>` : ''}
+            </td>
+            <td style="padding:12px 16px;text-align:right">
+                <div style="font-weight:700;font-size:12px;color:var(--biz-primary)">+${bizRp(s.profit)}</div>
+                <div style="font-weight:800;font-size:11px;color:${margTxt};margin-top:2px">${s.margin.toFixed(1)}%</div>
+            </td>
+            <td style="padding:12px 16px;text-align:right">
+                <span style="display:inline-block;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:800;background:var(--biz-surface-2);color:var(--biz-text-dim)">
+                    ${s.channel.toUpperCase()}
+                </span>
+            </td>
+        </tr>`;
     }).join('');
-}
 
-function _fmtDate(d) {
-    if (!d) return '—';
-    const dt = new Date(d + 'T00:00:00');
-    return dt.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    tbody.insertAdjacentHTML('beforeend', html);
+    _salesChunkPos = startIdx + _salesChunkSize;
+
+    if (_salesChunkPos < filtered.length) {
+        footer.innerHTML = `<button class="biz-btn biz-btn-ghost" style="width:100%" onclick="salesRenderChunk(${_salesChunkPos}, document.getElementById('sales-smart-search').value)">Load More (${filtered.length - _salesChunkPos} trx tersisa)</button>`;
+    } else {
+        footer.innerHTML = `Menampilkan terakhir ${filtered.length} transaksi.`;
+    }
 }
 
 window.bizLoadSales = bizLoadSales;
-window.salesFilter = salesFilter;
+window.salesRenderChunk = salesRenderChunk;

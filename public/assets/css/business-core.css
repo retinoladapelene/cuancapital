@@ -23,6 +23,11 @@
     --biz-warning: #f59e0b;
     --biz-warning-bg: rgba(245, 158, 11, 0.1);
     --biz-info: #3b82f6;
+    --biz-info-bg: #dbeafe;
+    /* For OVERSTOCK badging */
+    --biz-purple: #8b5cf6;
+    /* For EXPIRING badging */
+    --biz-purple-bg: #ede9fe;
 
     /* Theme - Defaulting to Light Mode for Native Fintech feel */
     --biz-bg: #f8fafc;
