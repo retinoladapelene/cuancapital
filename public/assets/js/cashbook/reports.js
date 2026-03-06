@@ -2,6 +2,24 @@
  * Reports / Analisa Tab Logic
  */
 
+let lapChartType = 'line'; // Default fallback
+
+window.setLapChartType = function (type) {
+    lapChartType = type;
+    const btnLine = document.getElementById('lap-btn-line');
+    const btnBar = document.getElementById('lap-btn-bar');
+    if (btnLine && btnBar) {
+        if (type === 'line') {
+            btnLine.style.background = 'var(--accent)'; btnLine.style.color = '#fff';
+            btnBar.style.background = 'transparent'; btnBar.style.color = 'var(--text-muted)';
+        } else {
+            btnBar.style.background = 'var(--accent)'; btnBar.style.color = '#fff';
+            btnLine.style.background = 'transparent'; btnLine.style.color = 'var(--text-muted)';
+        }
+    }
+    if (typeof generateReport === 'function') generateReport();
+};
+
 window.renderReportsTab = function (container) {
     window.injectHTML(container, `
         <!-- ══ LAYER 1: HEADER FILTER ══ -->
@@ -79,9 +97,15 @@ window.renderReportsTab = function (container) {
 
         <!-- ══ LAYER 3: CASHFLOW TREND ══ -->
         <div class="card" style="margin-bottom:24px;">
-            <div class="card-head">
-                <span class="card-title">Tren Arus Kas</span>
-                <span style="font-size:11px;color:var(--text-muted);">Pemasukan vs Pengeluaran</span>
+            <div class="card-head" style="align-items:center;">
+                <div>
+                    <span class="card-title">Tren Arus Kas</span>
+                    <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:2px;">Pemasukan vs Pengeluaran</span>
+                </div>
+                <div style="display:flex; gap:4px; background:var(--surface2); padding:4px; border-radius:8px; border:1px solid var(--border);">
+                    <button id="lap-btn-line" class="btn btn-ghost btn-sm" style="background:var(--accent);color:#fff;padding:6px 10px;" onclick="setLapChartType('line')"><i class="fas fa-chart-line"></i></button>
+                    <button id="lap-btn-bar" class="btn btn-ghost btn-sm" style="color:var(--text-muted);padding:6px 10px;" onclick="setLapChartType('bar')"><i class="fas fa-chart-bar"></i></button>
+                </div>
             </div>
             <div class="card-body" style="padding-top:16px;">
                 <div style="height:260px;position:relative;">
@@ -169,7 +193,6 @@ let lapCurrentPeriod = 'this_month';
 // lapTxVisibleCount is declared in core.js (global shared state)
 let lapTxDataBuffer = [];
 let lapCashflowChart = null, lapPillarChart = null, lapNetWorthChart = null;
-let lapChartType = 'bar'; // default
 
 function setLapPeriod(period, btnEl) {
     lapCurrentPeriod = period;

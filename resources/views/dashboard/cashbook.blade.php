@@ -109,17 +109,18 @@
 .tab-pane { display: block; }
 .tab-pane.active { display: block; animation: fadeUp .3s ease; }
 
-/* ── cb-toast (alias for the cashbook toast element) ── */
+/* ── cb-toast ── */
 #cb-toast {
-    position: fixed; bottom: 84px; right: 24px;
-    padding: 11px 18px; border-radius: 12px;
-    font-size: 13px; font-weight: 600; z-index: 400;
-    transform: translateY(12px); opacity: 0; transition: all .3s;
+    position: fixed; top: 24px; left: 50%;
+    padding: 12px 18px 12px 24px; border-radius: 12px;
+    font-size: 13px; font-weight: 600; z-index: 9999;
+    transform: translate(-50%, -20px); opacity: 0; transition: all .3s cubic-bezier(0.16,1,0.3,1);
     background: var(--surface); border: 1px solid var(--border);
-    box-shadow: 0 8px 32px rgba(0,0,0,.3); color: var(--text);
-    max-width: 360px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.2); color: var(--text);
+    width: max-content; max-width: 90%; overflow: hidden;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
 }
-#cb-toast.show { transform: translateY(0); opacity: 1; }
+#cb-toast.show { transform: translate(-50%, 0); opacity: 1; }
 </style>
 </head>
 <body>
@@ -140,12 +141,13 @@
 
 <!-- ── Desktop Top Nav ── -->
 <nav class="nav">
-    <a href="/" class="brand" style="text-decoration:none;">
-        <div class="brand-icon"><i class="fas fa-chart-line"></i></div>
-        <div>
-            <div>Cuan Cashbook</div>
-            <div class="brand-sub">Financial Control</div>
-        </div>
+    <a href="/" onclick="event.preventDefault(); if(typeof confirmDialog === 'function') confirmDialog('Keluar Aplikasi', 'Apakah Anda yakin ingin keluar dari halaman Cashbook dan kembali ke menu utama?', 'warning', () => window.location.href='/'); else window.location.href='/';" class="brand" style="text-decoration:none; display:flex; align-items:center;">
+        <img src="{{ asset('assets/icon/logo.svg') }}" class="brand-logo light-logo" alt="CuanCapital" style="height:32px;">
+        <img src="{{ asset('assets/icon/logo-darkmode.svg') }}" class="brand-logo dark-logo" alt="CuanCapital" style="height:32px;">
+        <style>
+            html[data-theme="dark"] .brand-logo.light-logo { display: none; }
+            html[data-theme="light"] .brand-logo.dark-logo { display: none; }
+        </style>
     </a>
     <div class="nav-center">
         <button class="nav-tab active" id="ntab-overview" onclick="switchMainTab('overview', null, this)">Overview</button>
@@ -154,10 +156,30 @@
         <button class="nav-tab" id="ntab-utang" onclick="switchMainTab('utang', null, this)">Utang</button>
         <button class="nav-tab" id="ntab-anggaran" onclick="switchMainTab('anggaran', null, this)">Anggaran</button>
     </div>
-    <div class="nav-right">
-        <button class="btn btn-ghost btn-sm icon-btn theme-toggle" onclick="toggleTheme()" title="Toggle tema"><i class="fas fa-moon"></i></button>
-        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-account')"><i class="fas fa-wallet"></i> Akun</button>
-        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-data')"><i class="fas fa-database"></i></button>
+    <div class="nav-right" style="display:flex; gap:8px; align-items:center;">
+        <div style="position:relative;">
+            <button class="btn btn-ghost btn-sm icon-btn" onclick="toggleNavMenu('nav-add-menu')" title="Catat Transaksi">
+                <i class="fas fa-plus"></i>
+            </button>
+            <div class="nav-dropdown" id="nav-add-menu">
+                <button class="nav-dd-btn" onclick="openModal('modal-transaction');prepTx('income');closeNavMenus()"><i class="fas fa-arrow-trend-up" style="color:var(--accent);"></i> Pemasukan</button>
+                <button class="nav-dd-btn" onclick="openModal('modal-transaction');prepTx('expense');closeNavMenus()"><i class="fas fa-arrow-trend-down" style="color:var(--danger);"></i> Pengeluaran</button>
+                <button class="nav-dd-btn" onclick="openModal('modal-transaction');prepTx('transfer');closeNavMenus()"><i class="fas fa-arrow-right-arrow-left" style="color:var(--info);"></i> Transfer</button>
+            </div>
+        </div>
+
+        <div style="position:relative;">
+            <button class="btn btn-ghost btn-sm icon-btn" onclick="toggleNavMenu('nav-gear-menu')" title="Pengaturan">
+                <i class="fas fa-gear"></i>
+            </button>
+            <div class="nav-dropdown" id="nav-gear-menu">
+                <button class="nav-dd-btn" onclick="toggleTheme();closeNavMenus()"><i class="fas fa-moon"></i> Mode Gelap / Terang</button>
+                <button class="nav-dd-btn" onclick="openModal('modal-account');closeNavMenus()"><i class="fas fa-wallet"></i> Kelola Akun</button>
+                <button class="nav-dd-btn" onclick="openModal('modal-data');closeNavMenus()"><i class="fas fa-database"></i> Backup & Restore JSON</button>
+                <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
+                <button class="nav-dd-btn" onclick="window.location.href='/guide/cashbook';closeNavMenus()"><i class="fas fa-book"></i> Panduan Cashbook</button>
+            </div>
+        </div>
     </div>
 </nav>
 
@@ -193,15 +215,7 @@
 </div>
 
 
-<!-- ── FAB (Desktop Quick Add) ── -->
-<div class="fab-wrap" id="fab-wrap">
-    <div class="fab-menu" id="fab-menu">
-        <div class="fab-pill" onclick="openModal('modal-transaction');prepTx('income')"><i class="fas fa-arrow-down-left" style="color:var(--accent)"></i> Pemasukan</div>
-        <div class="fab-pill" onclick="openModal('modal-transaction');prepTx('expense')"><i class="fas fa-arrow-up-right" style="color:var(--danger)"></i> Pengeluaran</div>
-        <div class="fab-pill" onclick="openModal('modal-transaction');prepTx('transfer')"><i class="fas fa-arrow-right-arrow-left" style="color:var(--info)"></i> Transfer</div>
-    </div>
-    <button class="fab" id="fab-btn" onclick="toggleFab()"><i class="fas fa-plus" id="fab-icon"></i></button>
-</div>
+<!-- ── FAB dihilangkan, Quick Add dipindah ke Top Navbar ── -->
 
 <!-- ── Toast ── -->
 <div id="cb-toast"></div>
@@ -224,31 +238,22 @@ window.ASSET_URL = "{{ asset('') }}";
     if (saved) document.documentElement.setAttribute('data-theme', saved);
 })();
 
-// ── FAB toggle (desktop) ──
-let fabOpen = false;
-function toggleFab() {
-    fabOpen = !fabOpen;
-    const menu = document.getElementById('fab-menu');
-    const icon = document.getElementById('fab-icon');
-    if (menu) menu.classList.toggle('open', fabOpen);
-    if (icon) { icon.className = fabOpen ? 'fas fa-times' : 'fas fa-plus'; }
-}
-window.toggleFab = toggleFab;
-
+// ── Top Nav Dropdowns ──
+window.toggleNavMenu = function(menuId) {
+    const menu = document.getElementById(menuId);
+    const isShowing = menu.style.display === 'flex';
+    closeNavMenus();
+    if (!isShowing) menu.style.display = 'flex';
+};
+window.closeNavMenus = function() {
+    document.querySelectorAll('.nav-dropdown').forEach(el => el.style.display = 'none');
+};
 document.addEventListener('click', function(e) {
-    // GUARD: early exit if nothing to close — prevents querySelectorAll on every click
-    const hasOpenDropdown = document.querySelector('.cdd-menu.open');
-    if (!fabOpen && !hasOpenDropdown) return;
-
-    // Close FAB if clicked outside
-    if (fabOpen && !e.target.closest('#fab-wrap')) {
-        fabOpen = false;
-        const menu = document.getElementById('fab-menu');
-        const icon = document.getElementById('fab-icon');
-        if (menu) menu.classList.remove('open');
-        if (icon) icon.className = 'fas fa-plus';
+    if (!e.target.closest('.nav-right')) {
+        closeNavMenus();
     }
     // Close custom dropdowns if clicked outside
+    const hasOpenDropdown = document.querySelector('.cdd-menu.open');
     if (hasOpenDropdown && !e.target.closest('.cdd')) {
         document.querySelectorAll('.cdd-menu.open').forEach(m => m.classList.remove('open'));
     }
@@ -293,6 +298,86 @@ if (!window.confirmDialog) {
         openModal('modal-confirm');
     };
 }
+
+// ── Export / Import Data stubs (real impl in debts.js, loaded lazily) ──
+if (!window.exportData) {
+    window.exportData = async function() {
+        toast('Sedang menyiapkan file backup...', 'i');
+        try {
+            let installments = [];
+            try { installments = await localAPI.installments.getAll(); } catch (_) {}
+            const backupData = {
+                exported_at: new Date().toISOString(), version: 1,
+                data: {
+                    meta: await localAPI.meta.getAll(),
+                    categories: await localAPI.categories.getAll(),
+                    accounts: await localAPI.accounts.getAll(),
+                    transactions: await localAPI.transactions.getAll(),
+                    budgets: await localAPI.budgets.getAll(),
+                    debts: await localAPI.debts.getAll(),
+                    installments
+                }
+            };
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none'; a.href = url;
+            a.download = `cuan_cashbook_backup_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a); a.click();
+            window.URL.revokeObjectURL(url);
+            toast('Backup berhasil diunduh!', 's');
+            if (typeof closeModal === 'function') closeModal('modal-data');
+        } catch (e) { toast('Gagal export: ' + e.message, 'e'); }
+    };
+}
+if (!window.handleImportFile) {
+    window.handleImportFile = async function(input) {
+        if (!input.files || !input.files.length) return;
+        const file = input.files[0];
+        if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
+            toast('File harus berformat .json', 'e'); input.value = ''; return;
+        }
+        toast('Sedang memulihkan data...', 'i');
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            try {
+                const parsed = JSON.parse(ev.target.result);
+                if (!parsed.data || typeof parsed.data !== 'object') throw new Error('Format JSON tidak valid');
+                const d = parsed.data;
+                const clearStore = (s) => localAPI._runOp(s, 'readwrite', store => store.clear());
+                if (d.categories)   { await clearStore('categories');   for (const i of d.categories)   await localAPI.categories.save(i); }
+                if (d.accounts)     { await clearStore('accounts');     for (const i of d.accounts)     await localAPI.accounts.save(i); }
+                if (d.transactions) { await clearStore('transactions'); for (const i of d.transactions) await localAPI.transactions.save(i); }
+                if (d.budgets)      { await clearStore('budgets');      for (const i of d.budgets)      await localAPI.budgets.save(i); }
+                if (d.debts)        { await clearStore('debts');        for (const i of d.debts)        await localAPI.debts.save(i); }
+                if (d.installments && d.installments.length) {
+                    try { await clearStore('installments'); for (const i of d.installments) await localAPI.installments.save(i); } catch (_) {}
+                }
+                if (d.meta) { for (const i of d.meta) await localAPI.meta.set(i.key, i.value); }
+                toast('Restore Sukses! Memuat ulang...', 's');
+                if (typeof closeModal === 'function') closeModal('modal-data');
+                setTimeout(() => window.location.reload(), 1500);
+            } catch (err) { toast('Gagal membaca JSON: ' + err.message, 'e'); }
+        };
+        reader.readAsText(file); input.value = '';
+    };
+}
+
+// ── Intercept Back Button (Exit Confirmation) ──
+window.addEventListener('load', () => {
+    history.pushState(null, null, location.href);
+});
+window.addEventListener('popstate', function onPopState() {
+    if (typeof confirmDialog === 'function') {
+        confirmDialog('Keluar Aplikasi', 'Apakah Anda yakin ingin keluar dari halaman Cashbook dan kembali ke menu utama?', 'warning', () => {
+            window.removeEventListener('popstate', onPopState);
+            window.location.href = '/';
+        });
+        history.pushState(null, null, location.href);
+    } else {
+        window.location.href = '/';
+    }
+});
 
 // ── Service Worker Registration ──
 if ('serviceWorker' in navigator) {

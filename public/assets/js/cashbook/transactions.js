@@ -15,10 +15,10 @@ window.renderTransactionsTab = function (container) {
             </button>
             <div class="tx-qa-types">
                 <button class="tx-qa-type-btn income" onclick="openModal('modal-transaction');prepTx('income')">
-                    <i class="fas fa-arrow-down-left"></i><span>Pemasukan</span>
+                    <i class="fas fa-arrow-trend-up"></i><span>Pemasukan</span>
                 </button>
                 <button class="tx-qa-type-btn expense" onclick="openModal('modal-transaction');prepTx('expense')">
-                    <i class="fas fa-arrow-up-right"></i><span>Pengeluaran</span>
+                    <i class="fas fa-arrow-trend-down"></i><span>Pengeluaran</span>
                 </button>
                 <button class="tx-qa-type-btn transfer" onclick="openModal('modal-transaction');prepTx('transfer')">
                     <i class="fas fa-arrow-right-arrow-left"></i><span>Transfer</span>
@@ -71,14 +71,14 @@ window.renderTransactionsTab = function (container) {
         <!-- ══ LAYER 3: MONTHLY SUMMARY STRIP ══ -->
         <div class="tx-summary-strip" id="tx-summary-strip">
             <div class="tx-sum-card income-sum">
-                <div class="tx-sum-icon"><i class="fas fa-arrow-down-left"></i></div>
+                <div class="tx-sum-icon"><i class="fas fa-arrow-trend-up"></i></div>
                 <div>
                     <div class="tx-sum-label">Pemasukan</div>
                     <div class="tx-sum-val pos" id="tx-sum-inc">Rp 0</div>
                 </div>
             </div>
             <div class="tx-sum-card expense-sum">
-                <div class="tx-sum-icon"><i class="fas fa-arrow-up-right"></i></div>
+                <div class="tx-sum-icon"><i class="fas fa-arrow-trend-down"></i></div>
                 <div>
                     <div class="tx-sum-label">Pengeluaran</div>
                     <div class="tx-sum-val neg" id="tx-sum-exp">Rp 0</div>
@@ -146,22 +146,14 @@ function renderTxTab() {
     const tbody = document.getElementById('tx-tab-tbody');
     if (!tbody) return;
 
-    // Fallback search and filters
-    const searchEl = document.getElementById('tx-search');
-    const q = (searchEl?.value || '').toLowerCase();
+    // 1. Ambil nilai filter
+    const q = (document.getElementById('tx-search')?.value || '').toLowerCase();
+    const t = document.getElementById('tx-filter-type')?.value || 'all';
+    const pillar = document.getElementById('tx-filter-pillar')?.value || 'all';
+    const range = getDateRange(document.getElementById('tx-filter-period')?.value || 'this_month');
 
-    const typeEl = document.getElementById('tx-filter-type');
-    const t = typeEl ? typeEl.value : 'all';
-
-    const pillarEl = document.getElementById('tx-filter-pillar');
-    const pillar = pillarEl ? pillarEl.value : 'all';
-
-    const periodEl = document.getElementById('tx-filter-period');
-    const period = periodEl ? periodEl.value : 'all';
-
-    const range = getDateRange(period);
-
-    let filtered = (allTxList || []).filter(tx => {
+    // 2. Filter data (satu kali jalan)
+    const filtered = (allTxList || []).filter(tx => {
         if (t !== 'all' && tx.type !== t) return false;
         if (pillar !== 'all') {
             const p = tx.category?.pillar || (tx.type === 'income' ? 'income' : '');
@@ -172,126 +164,119 @@ function renderTxTab() {
             if (d < range.start || d > range.end) return false;
         }
         if (q) {
-            const s = ((tx.note || '') + ' ' + (tx.category?.name || '') + ' ' + tx.amount).toLowerCase();
+            const s = `${tx.note || ''} ${tx.category?.name || ''} ${tx.amount}`.toLowerCase();
             if (!s.includes(q)) return false;
         }
         return true;
     });
 
+    // 3. Update Summary Strip (O(N) single pass)
     let sumInc = 0, sumExp = 0;
     filtered.forEach(tx => {
         if (tx.type === 'income') sumInc += parseFloat(tx.amount || 0);
-        if (tx.type === 'expense') sumExp += parseFloat(tx.amount || 0);
+        else if (tx.type === 'expense') sumExp += parseFloat(tx.amount || 0);
     });
-
-    const net = sumInc - sumExp;
-    const stripEl = document.getElementById('tx-summary-strip');
-    if (stripEl) {
-        stripEl.style.display = filtered.length ? 'grid' : 'none';
-        const incEl = document.getElementById('tx-sum-inc');
-        if (incEl) incEl.textContent = rp(sumInc);
-
-        const expEl = document.getElementById('tx-sum-exp');
-        if (expEl) expEl.textContent = rp(sumExp);
-
-        const netEl = document.getElementById('tx-sum-net');
-        if (netEl) {
-            netEl.textContent = rp(net);
-            netEl.style.color = net >= 0 ? 'var(--accent)' : 'var(--danger)';
-        }
-    }
+    updateSummaryUI(sumInc, sumExp, filtered.length);
 
     const loadMoreBtn = document.getElementById('btn-tx-loadmore');
-    const infoEl = document.getElementById('tx-tab-info');
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
 
     if (!filtered.length) {
+        if (window._txVirtualList) { window._txVirtualList.destroy(); window._txVirtualList = null; }
         tbody.innerHTML = '<div class="empty" style="margin-top:24px"><i class="fas fa-folder-open" style="font-size:32px;opacity:0.2;display:block;margin-bottom:10px;"></i><div style="font-size:14px;font-weight:700">Tidak ada transaksi</div><div style="font-size:12px;opacity:0.7">Coba ubah filter pencarian</div></div>';
-        if (infoEl) infoEl.textContent = 'Menampilkan 0 transaksi';
-        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
         return;
     }
 
-    // Pre-calculate daily aggregates O(N) instead of O(N^2)
-    const dailyNets = {};
-    filtered.forEach(tx => {
-        const dKey = tx.transaction_date.slice(0, 10);
-        if (tx.type === 'income') dailyNets[dKey] = (dailyNets[dKey] || 0) + parseFloat(tx.amount || 0);
-        else if (tx.type === 'expense') dailyNets[dKey] = (dailyNets[dKey] || 0) - parseFloat(tx.amount || 0);
-    });
-
-    let flatItems = [];
+    // 4. Build flat items — dayNet dihitung ON-THE-FLY, NO double pass
+    const flatItems = [];
     let lastDateKey = null;
+    let currentDayHeaderIndex = -1;
 
     filtered.forEach(tx => {
-        const dObj = new Date(tx.transaction_date);
         const dKey = tx.transaction_date.slice(0, 10);
 
         if (dKey !== lastDateKey) {
             lastDateKey = dKey;
+            currentDayHeaderIndex = flatItems.length;
             flatItems.push({
                 type: 'header',
                 dateStr: dKey,
-                dateObj: dObj,
-                dayNet: dailyNets[dKey] || 0
+                dateObj: new Date(dKey.replace(/-/g, '/') + ' 00:00:00'),
+                dayNet: 0
             });
         }
-        flatItems.push({ type: 'row', tx: tx });
+
+        // Update dayNet di header aktif secara langsung — tidak perlu loop kedua
+        const amt = parseFloat(tx.amount || 0);
+        if (tx.type === 'income') flatItems[currentDayHeaderIndex].dayNet += amt;
+        else if (tx.type === 'expense') flatItems[currentDayHeaderIndex].dayNet -= amt;
+
+        flatItems.push({ type: 'row', tx });
     });
 
-    if (window._txVirtualList) {
-        window._txVirtualList.destroy();
-        window._txVirtualList = null;
-    }
+    // 5. Jalankan VirtualList
+    if (window._txVirtualList) { window._txVirtualList.destroy(); window._txVirtualList = null; }
 
-    tbody.style.position = 'relative';
+    // contain:layout → browser tidak recalc seluruh halaman saat list berubah
+    tbody.style.cssText = 'position:relative; min-height:400px; contain:layout;';
+    tbody.innerHTML = ''; // Hapus sisa dom (terutama indikator loading)
 
     window._txVirtualList = new VirtualList(tbody, {
         items: flatItems,
-        getItemHeight: (item) => item.type === 'header' ? 36 : 64,
-        renderItem: (item) => {
-            if (item.type === 'header') {
-                const dLabel = item.dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'short' });
-                const netColor = item.dayNet > 0 ? 'var(--accent)' : item.dayNet < 0 ? 'var(--danger)' : 'var(--text-muted)';
-                return `
-                <div class="tx-day-header">
-                    <span>${dLabel}</span>
-                    <span class="tx-day-net" style="color:${netColor}">${item.dayNet >= 0 ? '+' : ''}${rp(item.dayNet)}</span>
-                </div>`;
-            } else {
-                const tx = item.tx;
-                const isInc = tx.type === 'income', isExp = tx.type === 'expense', isTransfer = tx.type === 'transfer';
-                const sign = isInc ? '+' : isExp ? '-' : String.fromCharCode(8644);
-                const catName = tx.category?.name || (isTransfer ? 'Transfer' : tx.type);
-                const accName = (window.accounts || []).find(a => a.id === tx.account_id)?.name || (isTransfer ? 'Antar Akun' : '-');
-
-                const iconBg = isInc ? 'rgba(16,185,129,.15)' : isTransfer ? 'rgba(59,130,246,.15)' : 'rgba(239,68,68,.15)';
-                const iconColor = isInc ? 'var(--accent)' : isTransfer ? 'var(--info)' : 'var(--danger)';
-                const icon = tx.category?.icon ? tx.category.icon : (isInc ? 'fa-arrow-down-left' : isTransfer ? 'fa-arrow-right-arrow-left' : 'fa-arrow-up-right');
-                const amtColor = isInc ? 'var(--accent)' : isTransfer ? 'var(--info)' : 'var(--danger)';
-
-                return `
-                <div class="tx-ledger-row">
-                    <div class="tx-row-icon" style="background:${iconBg};color:${iconColor};"><i class="fas ${icon}"></i></div>
-                    <div class="tx-row-body">
-                        <div class="tx-row-name">${tx.note || '<em style="opacity:.5">Tanpa Catatan</em>'}</div>
-                        <div class="tx-row-meta">${catName}</div>
-                    </div>
-                    <div class="tx-row-right">
-                        <div class="tx-row-amt" style="color:${amtColor}">${sign}${rp(tx.amount)}</div>
-                        <div class="tx-row-acct"><i class="fas fa-wallet" style="font-size:9px;margin-right:3px;opacity:.7"></i>${accName}</div>
-                    </div>
-                    <div class="tx-row-actions">
-                        <button onclick="editTx('${tx.id}')" title="Edit"><i class="fas fa-pen"></i></button>
-                        <button onclick="dupTx('${tx.id}')" title="Duplikat"><i class="fas fa-copy"></i></button>
-                        <button onclick="delTx('${tx.id}')" class="del" title="Hapus"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>`;
-            }
-        }
+        getItemHeight: (item) => item.type === 'header' ? 42 : 72,
+        renderItem: (item) => item.type === 'header' ? renderHeaderHTML(item) : renderRowHTML(item.tx)
     });
+}
 
-    if (infoEl) infoEl.textContent = 'Menampilkan ' + filtered.length + ' transaksi';
-    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+// ─── Helper: Update Summary UI ───
+function updateSummaryUI(inc, exp, count) {
+    const net = inc - exp;
+    const stripEl = document.getElementById('tx-summary-strip');
+    if (stripEl) stripEl.style.display = count > 0 ? 'grid' : 'none';
+    const incEl = document.getElementById('tx-sum-inc');
+    if (incEl) incEl.textContent = rp(inc);
+    const expEl = document.getElementById('tx-sum-exp');
+    if (expEl) expEl.textContent = rp(exp);
+    const netEl = document.getElementById('tx-sum-net');
+    if (netEl) { netEl.textContent = rp(net); netEl.style.color = net >= 0 ? 'var(--accent)' : 'var(--danger)'; }
+    const infoEl = document.getElementById('tx-tab-info');
+    if (infoEl) infoEl.textContent = `Menampilkan ${count} transaksi`;
+}
+
+// ─── Helper: Render Header Row ───
+function renderHeaderHTML(item) {
+    const dLabel = item.dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'short' });
+    const netColor = item.dayNet > 0 ? 'var(--accent)' : item.dayNet < 0 ? 'var(--danger)' : 'var(--text-muted)';
+    return `<div class="tx-day-header"><span>${dLabel}</span><span class="tx-day-net" style="color:${netColor}">${item.dayNet >= 0 ? '+' : ''}${rp(item.dayNet)}</span></div>`;
+}
+
+// ─── Helper: Render Transaction Row ───
+function renderRowHTML(tx) {
+    const isInc = tx.type === 'income';
+    const isExp = tx.type === 'expense';
+    const isTransfer = tx.type === 'transfer';
+    const sign = isInc ? '+' : isExp ? '-' : '⇄';
+    const amtColor = isInc ? 'var(--accent)' : isTransfer ? 'var(--info)' : 'var(--danger)';
+    const iconBg = isInc ? 'rgba(16,185,129,.15)' : isTransfer ? 'rgba(59,130,246,.15)' : 'rgba(239,68,68,.15)';
+    const icon = tx.category?.icon || (isInc ? 'fa-arrow-trend-up' : isTransfer ? 'fa-arrow-right-arrow-left' : 'fa-arrow-trend-down');
+    const catName = tx.category?.name || (isTransfer ? 'Transfer' : tx.type);
+    const accName = (window.accounts || []).find(a => a.id === tx.account_id)?.name || (isTransfer ? 'Antar Akun' : '-');
+    return `<div class="tx-ledger-row">
+        <div class="tx-row-icon" style="background:${iconBg};color:${amtColor};"><i class="fas ${icon}"></i></div>
+        <div class="tx-row-body">
+            <div class="tx-row-name">${tx.note || '<em style="opacity:.5">Tanpa Catatan</em>'}</div>
+            <div class="tx-row-meta">${catName}</div>
+        </div>
+        <div class="tx-row-right">
+            <div class="tx-row-amt" style="color:${amtColor}">${sign}${rp(tx.amount)}</div>
+            <div class="tx-row-acct"><i class="fas fa-wallet" style="font-size:9px;margin-right:3px;opacity:.7"></i>${accName}</div>
+        </div>
+        <div class="tx-row-actions">
+            <button onclick="editTx('${tx.id}')" title="Edit"><i class="fas fa-pen"></i></button>
+            <button onclick="dupTx('${tx.id}')" title="Duplikat"><i class="fas fa-copy"></i></button>
+            <button onclick="delTx('${tx.id}')" class="del" title="Hapus"><i class="fas fa-trash"></i></button>
+        </div>
+    </div>`;
 }
 
 function resetTxFilter() {

@@ -143,9 +143,10 @@
     <div class="mobile-nav" id="mobile-nav">
         <div class="mobile-pill active" onclick="scrollToSection('s-overview')">Overview</div>
         <div class="mobile-pill" onclick="scrollToSection('s-transaksi')">Transaksi</div>
-        <div class="mobile-pill" onclick="scrollToSection('s-anggaran')">Anggaran</div>
         <div class="mobile-pill" onclick="scrollToSection('s-laporan')">Laporan</div>
-        <div class="mobile-pill" onclick="scrollToSection('s-tips')">Tips Harian</div>
+        <div class="mobile-pill" onclick="scrollToSection('s-utang')">Utang</div>
+        <div class="mobile-pill" onclick="scrollToSection('s-anggaran')">Anggaran</div>
+        <div class="mobile-pill" onclick="scrollToSection('s-tips')">Tips</div>
     </div>
 </div>
 
@@ -160,9 +161,10 @@
         <div class="sidebar-label">Daftar Isi</div>
         <button class="sidebar-item active" onclick="scrollToSection('s-overview')"><span class="icon ic-slate"><i class="fas fa-map"></i></span> Overview</button>
         <button class="sidebar-item" onclick="scrollToSection('s-transaksi')"><span class="icon ic-theme"><i class="fas fa-arrow-right-arrow-left"></i></span> Tab Transaksi</button>
-        <button class="sidebar-item" onclick="scrollToSection('s-anggaran')"><span class="icon ic-blue"><i class="fas fa-wallet"></i></span> Tab Anggaran</button>
         <button class="sidebar-item" onclick="scrollToSection('s-laporan')"><span class="icon ic-amber"><i class="fas fa-chart-line"></i></span> Tab Laporan</button>
-        <button class="sidebar-item" onclick="scrollToSection('s-tips')"><span class="icon ic-rose"><i class="fas fa-star"></i></span> Tips Harian</button>
+        <button class="sidebar-item" onclick="scrollToSection('s-utang')"><span class="icon ic-rose"><i class="fas fa-credit-card"></i></span> Tab Utang</button>
+        <button class="sidebar-item" onclick="scrollToSection('s-anggaran')"><span class="icon ic-blue"><i class="fas fa-sliders"></i></span> Tab Anggaran</button>
+        <button class="sidebar-item" onclick="scrollToSection('s-tips')"><span class="icon" style="background:rgba(217,70,239,.15);color:#d946ef"><i class="fas fa-star"></i></span> Tips Harian</button>
     </aside>
 
     <main class="content">
@@ -267,47 +269,80 @@
             </div>
         </section>
 
+        <!-- TAB UTANG -->
+        <section class="section" id="s-utang">
+            <div class="section-tag rose"><i class="fas fa-credit-card"></i> Tab Utang</div>
+            <div class="tab-badge rose" style="background:rgba(244,63,94,.12);color:#f43f5e;border:1px solid rgba(244,63,94,.2)"><i class="fas fa-circle" style="font-size:7px"></i> Tab 4</div>
+            <h2>Manajemen Pinjaman dan Piutang</h2>
+            <p class="subtitle">Tab utang dirancang untuk memastikan Anda tidak pernah melewatkan jatuh tempo cicilan atau lupa siapa yang berutang kepada Anda.</p>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-body">
+                        <div class="step-title">Tekan tombol Buka Utang Baru</div>
+                        <div class="step-desc">Tentukan apakah ini utang (Anda meminjam) atau piutang (orang lain meminjam uang Anda). Masukkan nominal total pinjaman.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-body">
+                        <div class="step-title">Lakukan pembayaran cicilan</div>
+                        <div class="step-desc">Gunakan menu Bayar Cicilan untuk mencicil utang. Pilih sumber akun kas mana yang digunakan untuk membayar agar saldo bank otomatis berkurang.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-body">
+                        <div class="step-title">Pantau Status Lunas</div>
+                        <div class="step-desc">Terdapat riwayat detail cicilan per utang. Setelah saldo utang habis (Rp 0), utang akan otomatis ditandai sebagai "Lunas".</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="callout info">
+                <div class="callout-icon"><i class="fas fa-circle-info"></i></div>
+                <div class="callout-body">
+                    <strong>Rasio Utang terhadap Aset (Debt-to-Asset Ratio)</strong>
+                    <p>Sistem secara otomatis menghitung berapa persentase total utang Anda berbanding total uang yang ada di seluruh akun kas Anda. Rasio di atas 50% berarti status bahaya.</p>
+                </div>
+            </div>
+        </section>
+
         <!-- TAB ANGGARAN -->
         <section class="section" id="s-anggaran">
             <div class="section-tag blue"><i class="fas fa-wallet"></i> Tab Anggaran</div>
-            <div class="tab-badge blue"><i class="fas fa-circle" style="font-size:7px"></i> Tab 2</div>
+            <div class="tab-badge blue"><i class="fas fa-circle" style="font-size:7px"></i> Tab 5</div>
             <h2>Mengontrol Pengeluaran dengan Budget</h2>
-            <p class="subtitle">Set batas pengeluaran per kategori dan pantau pemakaiannya secara real-time. Sistem akan memperingatkan saat kamu mendekati atau melewati batas.</p>
+            <p class="subtitle">Set batas pengeluaran per kategori dan pantau pemakaiannya secara real-time melalui *Progress Card* premium. Sistem akan memperingatkan saat kamu mendekati atau melewati batas.</p>
 
             <div class="steps">
                 <div class="step">
                     <div class="step-num">1</div>
                     <div class="step-body">
                         <div class="step-title">Pilih bulan yang ingin di-set budget</div>
-                        <div class="step-desc">Gunakan dropdown bulan di baris filter. Budget bersifat per-bulan dan bisa berbeda tiap bulannya.</div>
+                        <div class="step-desc">Gunakan menu navigasi tanggal di atas header untuk berpindah antar bulan. Budget bersifat spesifik per-bulan.</div>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-num">2</div>
                     <div class="step-body">
-                        <div class="step-title">Klik "Set Budget Baru"</div>
-                        <div class="step-desc">Pilih kategori dan masukkan limit maksimal pengeluaran untuk kategori tersebut dalam sebulan.</div>
+                        <div class="step-title">Klik tombol "+ Tambah" di Header Kategori</div>
+                        <div class="step-desc">Pilih kategori dan masukkan limit maksimal pengeluaran untuk kategori tersebut dalam sebulan berjalan.</div>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-num">3</div>
                     <div class="step-body">
-                        <div class="step-title">Pantau progress bar setiap kategori</div>
-                        <div class="step-desc">Bar hijau = aman, kuning = waspada (80%), merah = over budget. Angka persentase menunjukkan pemakaian saat ini.</div>
+                        <div class="step-title">Pantau Kartu Progress</div>
+                        <div class="step-desc">Aplikasi akan me-*render* UI Card untuk setiap anggaran. Bar hijau = aman, kuning = waspada (80%), merah = *over budget*. Kamu bisa langsung melihat sisa nominal yang bisa dipakai.</div>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-num">4</div>
                     <div class="step-body">
-                        <div class="step-title">Edit atau hapus budget yang ada</div>
-                        <div class="step-desc">Klik ikon pensil untuk mengubah limit budget yang sudah ada, atau hapus jika tidak relevan.</div>
-                    </div>
-                </div>
-                <div class="step">
-                    <div class="step-num">5</div>
-                    <div class="step-body">
-                        <div class="step-title">Gunakan "Copy Bulan Lalu" untuk efisiensi</div>
-                        <div class="step-desc">Jika budget bulan ini sama dengan bulan lalu, klik tombol Copy untuk menyalin semua budget sekaligus tanpa perlu input ulang.</div>
+                        <div class="step-title">Aksi Langsung dari Kartu</div>
+                        <div class="step-desc">Arahkan kursor ke kartu anggaran untuk menampilkan tombol Edit dan Hapus tersembunyi.</div>
                     </div>
                 </div>
             </div>
@@ -499,7 +534,7 @@ window.addEventListener('scroll',()=>{
     const pct=document.body.scrollHeight-window.innerHeight>0?(window.scrollY/(document.body.scrollHeight-window.innerHeight))*100:0;
     document.getElementById('progress-bar').style.width=pct+'%';
 });
-const sectionIds=['s-overview','s-transaksi','s-anggaran','s-laporan','s-tips'];
+const sectionIds=['s-overview','s-transaksi','s-laporan','s-utang','s-anggaran','s-tips'];
 function getScrollOffset(){
     const nav=document.querySelector('.top-nav');
     const mob=document.querySelector('.mobile-nav-wrap');

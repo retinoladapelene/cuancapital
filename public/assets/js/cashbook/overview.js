@@ -9,27 +9,28 @@ window.renderOverviewTab = function (container) {
         <!-- ══ HERO: Balance + Score ══ -->
         <div class="ov-hero-card">
             <div class="ov-hero-top">
-                <div>
+                <!-- 1. Total Saldo -->
+                <div style="grid-area: saldo;">
                     <div class="ov-hero-label">Total Saldo</div>
                     <div class="ov-hero-balance" id="ov-total-balance">Rp --</div>
                     <div class="ov-hero-sub" id="ov-balance-sub">Di semua akun</div>
-
-                    <!-- Hari Ini chip -->
-                    <div style="display:inline-flex; align-items:center; gap:12px; margin-top:12px; background:var(--surface3); padding:8px 12px; border-radius:10px; border:1px solid var(--border);">
-                        <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; border-right:1px solid var(--border); padding-right:10px;">Hari Ini</div>
-                        <div style="display:flex; gap:12px;">
-                            <div style="font-size:12px; font-weight:800; font-family:'JetBrains Mono', monospace; color:var(--accent);"><i class="fas fa-arrow-down-left" style="font-size:10px;margin-right:4px;"></i><span id="ov-today-in">0</span></div>
-                            <div style="font-size:12px; font-weight:800; font-family:'JetBrains Mono', monospace; color:var(--danger);"><i class="fas fa-arrow-up-right" style="font-size:10px;margin-right:4px;"></i><span id="ov-today-out">0</span></div>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Financial Score badge -->
-                <div class="ov-health-badge" id="ov-health-badge" style="padding:12px 16px; border-radius:16px; background:linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.05) 100%); border:1px solid rgba(34,197,94,0.3);">
+                <!-- 2. Financial Score badge -->
+                <div class="ov-health-badge" id="ov-health-badge" style="grid-area: score; align-self: start; padding:12px 16px; border-radius:16px; background:linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.05) 100%); border:1px solid rgba(34,197,94,0.3);">
                     <div style="font-size:10px; color:var(--accent); letter-spacing:0.5px; margin-bottom:2px; text-transform:uppercase;">Financial Score</div>
                     <div style="display:flex; align-items:baseline; gap:2px;">
                         <span id="ov-health-score" style="font-size:24px; font-family:'JetBrains Mono', monospace; font-weight:900; color:var(--accent); line-height:1;">--</span>
                         <span style="font-size:12px; font-family:'JetBrains Mono', monospace; font-weight:600; color:rgba(34,197,94,0.6);">/100</span>
+                    </div>
+                </div>
+
+                <!-- 3. Hari Ini chip -->
+                <div style="grid-area: hariini; display:inline-flex; align-items:center; gap:12px; background:var(--surface3); padding:8px 12px; border-radius:10px; border:1px solid var(--border); width: fit-content;">
+                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; border-right:1px solid var(--border); padding-right:10px;">Hari Ini</div>
+                    <div style="display:flex; gap:12px;">
+                        <div style="font-size:12px; font-weight:800; font-family:'JetBrains Mono', monospace; color:var(--accent);"><i class="fas fa-arrow-down-left" style="font-size:10px;margin-right:4px;"></i><span id="ov-today-in">0</span></div>
+                        <div style="font-size:12px; font-weight:800; font-family:'JetBrains Mono', monospace; color:var(--danger);"><i class="fas fa-arrow-up-right" style="font-size:10px;margin-right:4px;"></i><span id="ov-today-out">0</span></div>
                     </div>
                 </div>
             </div>
@@ -55,14 +56,14 @@ window.renderOverviewTab = function (container) {
 
         <!-- ══ KPI GRID (4 cards) ══ -->
         <div class="kpi-grid">
-            <div class="kpi-card primary">
+            <div class="kpi-card">
                 <div class="kpi-label"><i class="fas fa-arrow-trend-up" style="color:var(--accent);margin-right:6px;"></i>Pemasukan</div>
                 <div class="kpi-value pos" id="ov-income">--</div>
                 <div class="kpi-sub">Bulan ini</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label"><i class="fas fa-arrow-trend-down" style="color:var(--danger);margin-right:6px;"></i>Pengeluaran</div>
-                <div class="kpi-value" id="ov-expense" style="color:var(--danger);">--</div>
+                <div class="kpi-value" id="ov-expense">--</div>
                 <div class="kpi-sub">Bulan ini</div>
             </div>
             <div class="kpi-card">

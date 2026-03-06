@@ -46,21 +46,19 @@ window.renderBudgetsTab = function (container) {
             <div class="card-head" style="padding-bottom:12px; border-bottom:1px solid var(--border);">
                 <span class="card-title">Daftar Kategori</span>
                 <div style="display:flex;gap:8px;">
+                    <button class="btn btn-ghost btn-sm" onclick="openModal('modal-budget')" style="background:var(--accent-glow); color:var(--accent); font-weight:700;">
+                        <i class="fas fa-plus"></i> Tambah
+                    </button>
                     <button class="btn btn-ghost btn-sm" onclick="copyLastMonthBudget()" title="Copy budget bulan lalu">
                         <i class="fas fa-copy"></i>
                     </button>
                 </div>
             </div>
-            <div class="card-body-sm" id="ang-category-list" style="padding:0">
+            <div class="card-body-sm" id="ang-category-list" style="padding:16px 0 0 0;">
                 <div class="empty" style="padding:32px 20px;"><i class="fas fa-folder-open"></i>Belum ada anggaran dibuat.<br><span style="font-size:12px;opacity:0.7;margin-top:6px;display:block;">Anggaran membantu kamu mengontrol pengeluaran.</span></div>
             </div>
         </div>
-
-        <!-- ══ FLOATING ADD BUTTON ══ -->
-        <button class="ang-fab" onclick="openModal('modal-budget')">
-            <i class="fas fa-plus"></i> Tambah Anggaran
-        </button>
-    `);
+    `;
 
     setTimeout(() => { if (typeof window.loadAnggaran === 'function') window.loadAnggaran(); }, 1);
 
@@ -447,18 +445,23 @@ async function loadAnggaran() {
         budgetItems.forEach(b => {
             const color = b.pct >= 100 ? 'var(--danger)' : b.pct > 80 ? 'var(--warning)' : 'var(--accent)';
             const el = document.createElement('div');
-            el.style.cssText = 'padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;';
+            el.className = 'ang-prog-item';
+            el.setAttribute('onclick', `if(typeof openModal === 'function'){openModal('modal-budget'); setTimeout(()=>{document.getElementById('modal-budget').dataset.editId='${b.id}';const c=document.getElementById('bgt-cat-val');if(c)c.value='${b.category_id}';const l=document.getElementById('bgt-limit');if(l)l.value='${b.limit}';},100)}`);
             el.innerHTML = `
-                <div>
-                    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">${b.catName}</div>
-                    <div style="font-size:12px;color:var(--text-muted);"><span style="color:${color};font-weight:700;">${rp(b.usage)}</span> / ${rp(b.limit)}</div>
-                </div>
-                <div style="text-align:right">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Sisa: ${rp(Math.max(0, b.limit - b.usage))}</div>
-                    <div style="display:flex;gap:4px;justify-content:flex-end;">
-                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px;" data-bid="${b.id}" onclick="angEditById(this)"><i class="fas fa-pen"></i></button>
-                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px;color:var(--danger);" data-bid="${b.id}" onclick="angDeleteById(this)"><i class="fas fa-trash"></i></button>
+                <div class="ang-prog-header">
+                    <span class="ang-prog-name">${b.catName}</span>
+                    <span class="ang-prog-pct" style="color:${color}">${b.pct.toFixed(0)}%</span>
+                    <div class="ang-prog-acts">
+                        <button class="edit" title="Edit" data-bid="${b.id}" onclick="event.stopPropagation(); angEditById(this)"><i class="fas fa-pen"></i></button>
+                        <button class="del" title="Hapus" data-bid="${b.id}" onclick="event.stopPropagation(); angDeleteById(this)"><i class="fas fa-trash"></i></button>
                     </div>
+                </div>
+                <div class="ang-prog-track">
+                    <div class="ang-prog-fill" style="width:${Math.min(100, b.pct)}%; background:${color};"></div>
+                </div>
+                <div class="ang-prog-meta">
+                    <span>${rp(b.usage)}</span>
+                    <span>dari ${rp(b.limit)}</span>
                 </div>
             `;
             fragC.appendChild(el);

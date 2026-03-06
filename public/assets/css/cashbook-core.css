@@ -176,6 +176,52 @@ body::after {
   letter-spacing: 0;
 }
 
+.nav-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: 220px;
+  z-index: 1000;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  padding: 8px;
+  display: none;
+  animation: fadeUp .2s ease;
+}
+
+.nav-dd-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+  transition: background .15s;
+}
+
+.nav-dd-btn:hover {
+  background: var(--surface2);
+}
+
+.nav-dd-btn i {
+  width: 16px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
 .nav-center {
   position: absolute;
   left: 50%;

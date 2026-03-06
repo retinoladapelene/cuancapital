@@ -1,6 +1,6 @@
 /**
- * Lightweight Virtual List Helper for Cashbook Mobile Performance
- * Only renders items that are currently visible in the scroll viewport.
+ * Optimized Virtual List Helper for Cashbook Mobile Performance
+ * Fokus: DOM Reuse, Minimal Reflow, & Memory Safety
  */
 window.VirtualList = class VirtualList {
     constructor(container, options) {
@@ -8,147 +8,122 @@ window.VirtualList = class VirtualList {
         this.items = options.items || [];
         this.renderItem = options.renderItem;
         this.getItemHeight = options.getItemHeight || (() => 64);
-        this.overscan = options.overscan || 8; // Render 8 items above/below viewport
+        this.overscan = options.overscan || 5; // Dikurangi sedikit untuk hemat memori mobile
 
-        // Cache offset to prevent Layout Thrashing during scroll!
+        this.scrollParent = options.scrollParent || window;
         this.cachedOffset = null;
-
-        // Create the scroll pad that dictates the total height
-        this.scrollPad = document.createElement('div');
-        this.scrollPad.style.position = 'relative';
-        this.scrollPad.style.width = '100%';
-        this.scrollPad.style.willChange = 'transform'; // Promote to GPU layer
-        this.scrollPad.style.transform = 'translateZ(0)';
-        this.container.appendChild(this.scrollPad);
-
-        this.itemPositions = [];
-        let currentY = 0;
-        for (let i = 0; i < this.items.length; i++) {
-            const h = this.getItemHeight(this.items[i]);
-            this.itemPositions.push({ y: currentY, h: h });
-            currentY += h;
-        }
-        this.scrollPad.style.height = `${currentY}px`;
-
         this.renderedNodes = new Map();
 
-        // The page scrolls, so window is the scroll parent
-        this.scrollParent = options.scrollParent || window;
+        // Pool untuk menyimpan elemen yang sedang tidak dipakai (DOM Reuse)
+        this.nodePool = [];
 
-        this.isScrolling = false;
-        this.onScroll = () => {
-            if (!this.isScrolling) {
-                this.isScrolling = true;
-                requestAnimationFrame(this._onScroll.bind(this));
-            }
-        };
+        this.scrollPad = document.createElement('div');
+        this.scrollPad.style.cssText = 'position:relative; width:100%; contain:layout;';
+        this.container.appendChild(this.scrollPad);
 
-        this.onResize = () => {
-            this.cachedOffset = null; // Invalidate cache on resize
-            this.onScroll();
-        };
+        this.calculatePositions();
+
+        this.onScroll = this.throttle(() => {
+            requestAnimationFrame(() => this._updateVisibleItems());
+        }, 16); // Target ~60fps
 
         this.scrollParent.addEventListener('scroll', this.onScroll, { passive: true });
-        this.scrollParent.addEventListener('resize', this.onResize, { passive: true });
 
-        // Initial render
-        this.onScroll();
+        this.onResize = () => { this.cachedOffset = null; this.onScroll(); };
+        window.addEventListener('resize', this.onResize, { passive: true });
+
+        this._updateVisibleItems();
     }
 
-    // Fast O(log N) binary search for starting index
-    _findIndexForPosition(yPos) {
-        let low = 0;
-        let high = this.itemPositions.length - 1;
-        while (low <= high) {
-            const mid = Math.floor((low + high) / 2);
-            const pos = this.itemPositions[mid];
-            if (yPos >= pos.y && yPos < pos.y + pos.h) {
-                return mid;
-            } else if (yPos < pos.y) {
-                high = mid - 1;
-            } else {
-                low = mid + 1;
-            }
-        }
-        return low;
+    calculatePositions() {
+        let currentY = 0;
+        this.itemPositions = this.items.map(item => {
+            const h = this.getItemHeight(item);
+            const pos = { y: currentY, h: h };
+            currentY += h;
+            return pos;
+        });
+        this.scrollPad.style.height = `${currentY}px`;
     }
 
-    _onScroll() {
-        if (!this.container || !this.container.isConnected) {
-            this.destroy();
-            return;
-        }
+    // Mendapatkan elemen dari pool atau buat baru jika kosong
+    _getElement() {
+        if (this.nodePool.length > 0) return this.nodePool.pop();
+        const el = document.createElement('div');
+        el.style.cssText = 'position:absolute; width:100%; will-change:transform;';
+        return el;
+    }
+
+    _updateVisibleItems() {
+        if (!this.container || !this.container.isConnected) return;
 
         const scrollTop = this.scrollParent === window ? window.scrollY : this.scrollParent.scrollTop;
         const viewportHeight = this.scrollParent === window ? window.innerHeight : this.scrollParent.clientHeight;
 
-        // Cache the offset to eliminate GET BOUNDING CLIENT RECT reflow!
-        if (this.cachedOffset === null && this.scrollParent === window) {
-            const rect = this.container.getBoundingClientRect();
-            this.cachedOffset = scrollTop + rect.top;
-        } else if (this.scrollParent !== window) {
-            this.cachedOffset = 0;
+        if (this.cachedOffset === null) {
+            this.cachedOffset = this.container.getBoundingClientRect().top + scrollTop;
         }
 
         const visibleTop = Math.max(0, scrollTop - this.cachedOffset);
         const visibleBottom = visibleTop + viewportHeight;
 
-        // O(log N) search instead of O(N) loop
         let startIndex = this._findIndexForPosition(visibleTop);
         startIndex = Math.max(0, startIndex - this.overscan);
 
         let endIndex = startIndex;
-        while (endIndex < this.itemPositions.length && this.itemPositions[endIndex].y < visibleBottom) {
+        const maxCheck = visibleBottom + (this.overscan * 64);
+        while (endIndex < this.items.length && this.itemPositions[endIndex].y < maxCheck) {
             endIndex++;
         }
         endIndex = Math.min(this.items.length, endIndex + this.overscan);
 
-        const newKeys = new Set();
-        const fragment = document.createDocumentFragment();
+        const activeKeys = new Set();
 
+        // Render/Update items
         for (let i = startIndex; i < endIndex; i++) {
-            newKeys.add(i);
+            activeKeys.add(i);
             if (!this.renderedNodes.has(i)) {
-                let wrapper;
-                // DOM Object Pooling: Reuse old nodes if available
-                if (this.nodePool.length > 0) {
-                    wrapper = this.nodePool.pop();
-                } else {
-                    wrapper = document.createElement('div');
-                    wrapper.style.position = 'absolute';
-                    wrapper.style.width = '100%';
-                    // REMOVED will-change: transform per item to save massive amounts of mobile GPU VRAM
-                }
+                const node = this._getElement();
+                node.innerHTML = this.renderItem(this.items[i], i);
+                node.style.transform = `translateY(${this.itemPositions[i].y}px)`;
 
-                const nodeStr = this.renderItem(this.items[i], i);
-                wrapper.innerHTML = nodeStr.trim();
-                wrapper.style.transform = `translateY(${this.itemPositions[i].y}px) translateZ(0)`;
-
-                fragment.appendChild(wrapper);
-                this.renderedNodes.set(i, wrapper);
+                this.scrollPad.appendChild(node);
+                this.renderedNodes.set(i, node);
             }
         }
 
-        if (fragment.children.length > 0) {
-            this.scrollPad.appendChild(fragment);
-        }
-
-        // Cleanup out-of-bounds nodes & recycle them
-        for (const [i, el] of this.renderedNodes.entries()) {
-            if (!newKeys.has(i)) {
-                if (el.parentNode) el.parentNode.removeChild(el);
-                this.nodePool.push(el); // Send back to the pool
+        // Cleanup: Masukkan elemen yang tidak terlihat kembali ke Pool
+        for (const [i, node] of this.renderedNodes.entries()) {
+            if (!activeKeys.has(i)) {
+                this.scrollPad.removeChild(node);
+                this.nodePool.push(node);
                 this.renderedNodes.delete(i);
             }
         }
+    }
 
-        this.isScrolling = false;
+    _findIndexForPosition(yPos) {
+        let low = 0, high = this.itemPositions.length - 1;
+        while (low <= high) {
+            const mid = (low + high) >> 1;
+            if (this.itemPositions[mid].y <= yPos) low = mid + 1;
+            else high = mid - 1;
+        }
+        return Math.max(0, low - 1);
+    }
+
+    throttle(fn, ms) {
+        let timeout;
+        return () => {
+            if (timeout) return;
+            timeout = setTimeout(() => { fn(); timeout = null; }, ms);
+        };
     }
 
     destroy() {
         this.scrollParent.removeEventListener('scroll', this.onScroll);
-        this.scrollParent.removeEventListener('resize', this.onResize);
-        this.container.innerHTML = '';
+        window.removeEventListener('resize', this.onResize);
+        if (this.container) this.container.innerHTML = '';
         this.renderedNodes.clear();
         this.nodePool = [];
     }

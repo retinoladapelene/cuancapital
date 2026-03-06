@@ -43,7 +43,7 @@ function showNextToast() {
     const c = colors[type] || colors.i;
     const i = icons[type] || icons.i;
 
-    tEl.innerHTML = `<div style="display:flex;align-items:center;gap:12px;"><div style="width:28px;height:28px;border-radius:50%;background:${c[1]};display:flex;align-items:center;justify-content:center;color:${c[0]};"><i class="fas ${i}"></i></div><div style="font-size:13px;font-weight:500;color:#f8fafc;">${msg}</div></div>`;
+    tEl.innerHTML = `<img src="${window.ASSET_URL || '/'}assets/icon/aksa_notif.png" style="position:absolute; left:0; top:0; height:100%; object-fit:cover; opacity:0.8; z-index:0; mix-blend-mode:overlay; border-radius:12px 0 0 12px; width:40px;"><div style="position:relative; z-index:1; display:flex; align-items:center; gap:12px;"><div style="width:28px; height:28px; border-radius:50%; background:${c[1]}; display:flex; align-items:center; justify-content:center; color:${c[0]};"><i class="fas ${i}"></i></div><div style="font-size:13px; font-weight:600; color:var(--text);">${msg}</div></div>`;
     tEl.style.borderLeft = `3px solid ${c[0]}`;
 
     requestAnimationFrame(() => {

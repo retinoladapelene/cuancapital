@@ -1,4 +1,48 @@
-<!-- ─── MODAL: Add Debt ─── -->
+<!-- ─── MODAL: Panduan Cashbook ─── -->
+    <div class="modal-bg" id="modal-panduan" onclick="closeOut(this)">
+        <div class="modal" onclick="event.stopPropagation()" style="max-width:550px">
+            <div class="modal-head">
+                <span class="modal-title"><i class="fas fa-book" style="color:var(--accent);margin-right:8px"></i>Panduan Cashbook</span>
+                <button class="modal-close" onclick="closeModal('modal-panduan')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="max-height:60vh; overflow-y:auto; line-height:1.6; font-size:13px; color:var(--text);">
+                <div style="margin-bottom:16px;">
+                    <strong>Fungsi Cashbook</strong><br>
+                    Cashbook (Buku Kas) adalah fitur untuk memantau, mencatat, dan mengelola seluruh arus kas masuk dan keluar secara disiplin dan akurat.
+                </div>
+                
+                <div style="margin-bottom:16px;">
+                    <strong><i class="fas fa-house" style="color:var(--accent);width:16px;"></i> Tab Overview</strong><br>
+                    Ringkasan eksekutif keuangan Anda. Menampilkan Total Saldo, Financial Score, progress Saving Rate, skor Runway (Dana Darurat), serta grafik distribusi arus kas 30 hari terakhir.
+                </div>
+                
+                <div style="margin-bottom:16px;">
+                    <strong><i class="fas fa-receipt" style="color:var(--accent);width:16px;"></i> Tab Transaksi</strong><br>
+                    Buku besar cerdas (Smart Ledger) untuk mencatat semua transaksi harian. Anda dapat memfilter berdasarkan tanggal/tipe, mencari transaksi spesifik, mengedit, menduplikasi, maupun menghapus catatan.
+                </div>
+                
+                <div style="margin-bottom:16px;">
+                    <strong><i class="fas fa-chart-bar" style="color:var(--accent);width:16px;"></i> Tab Laporan</strong><br>
+                    Pusat analisa riwayat keuangan. Menampilkan tren arus kas yang dapat di-*toggle* (Line vs Bar chart), rincian Metrik Keuangan (Month-over-month), dan distribusi pengeluaran top 5 kategori.
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <strong><i class="fas fa-credit-card" style="color:var(--accent);width:16px;"></i> Tab Utang</strong><br>
+                    Manajemen utang dan piutang. Anda dapat melacak sisa pinjaman, membayar cicilan, serta melihat persentase rasio utang (Debt-to-Asset Ratio) terhadap total aset Anda.
+                </div>
+                
+                <div style="margin-bottom:16px;">
+                    <strong><i class="fas fa-sliders" style="color:var(--accent);width:16px;"></i> Tab Anggaran</strong><br>
+                    Sistem kendali keuangan. Di sini Anda menetapkan limit maksimal pengeluaran (budget) per kategori. Tab ini akan memberikan insight jika pengeluaran hampir mendekati atau melewati batas limit.
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-accent" style="width:100%" onclick="closeModal('modal-panduan')">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MODAL: Add Debt ─── -->
     <div class="modal-bg" id="modal-add-debt" onclick="closeOut(this)">
         <div class="modal" onclick="event.stopPropagation()" style="max-width:440px">
             <div class="modal-head">
