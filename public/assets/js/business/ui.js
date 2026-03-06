@@ -60,6 +60,22 @@ window.bizOpenModal = bizOpenModal;
 window.bizCloseModal = bizCloseModal;
 window.bizCloseOut = bizCloseOut;
 
+// ── Global FAB Menu ───────────────────────────────────────────────────────────
+function bizToggleFabMenu() {
+    const menu = document.getElementById('biz-fab-menu');
+    const main = document.querySelector('.biz-fab-main');
+    if (!menu || !main) return;
+
+    if (menu.classList.contains('open')) {
+        menu.classList.remove('open');
+        main.classList.remove('active');
+    } else {
+        menu.classList.add('open');
+        main.classList.add('active');
+    }
+}
+window.bizToggleFabMenu = bizToggleFabMenu;
+
 // ── Tab Manager (App Shell Router) ────────────────────────────────────────────
 const BIZ_MODULES = {
     dashboard: { loaded: false, init: () => typeof bizLoadDashboard === 'function' && bizLoadDashboard() },
@@ -119,9 +135,15 @@ function bizConfirm(title, msg, onConfirm, type = 'danger') {
 }
 window.bizConfirm = bizConfirm;
 
-// ── Global Click Outside to Close Modals ─────────────────────────────────────
+// ── Global Click Outside to Close Modals & FAB ───────────────────────────────
 document.addEventListener('click', e => {
     if (e.target.classList.contains('biz-modal-bg')) bizCloseOut(e.target);
+
+    // Auto-close FAB menu if clicking outside
+    if (!e.target.closest('.biz-global-fab')) {
+        document.getElementById('biz-fab-menu')?.classList.remove('open');
+        document.querySelector('.biz-fab-main')?.classList.remove('active');
+    }
 }, { passive: true });
 
 // ── Back Button Intercept ─────────────────────────────────────────────────────

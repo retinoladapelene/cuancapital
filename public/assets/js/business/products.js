@@ -206,15 +206,23 @@ function prodSetFilter(el, type) {
     window._prodTypeFilter = type;
     prodFilter(document.getElementById('prod-search')?.value || '');
 }
-function prodFilter(q) {
+let _prodListDisplayLimit = 30;
+function prodFilter(q, append = false) {
     const grid = document.getElementById('prod-grid');
     if (!grid) return;
+    if (!append) _prodListDisplayLimit = 30;
+
     let list = window._productsData || [];
     if (window._prodTypeFilter && window._prodTypeFilter !== 'all') list = list.filter(p => p.type === window._prodTypeFilter);
     if (q) list = list.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+
     if (!list.length) { grid.innerHTML = '<div class="biz-empty" style="grid-column:1/-1"><i class="fas fa-box-open"></i><br>Belum ada produk</div>'; return; }
 
-    grid.innerHTML = list.map(p => {
+    const isFullRender = !append;
+    const startIdx = isFullRender ? 0 : _prodListDisplayLimit - 30;
+    const renderList = list.slice(startIdx, _prodListDisplayLimit);
+
+    const html = renderList.map(p => {
         const margin = p.price_sell > 0 ? ((p.price_sell - (p.hpp || 0)) / p.price_sell * 100).toFixed(0) : 0;
         let stockBadge = '';
         if (p.type === 'physical') {
@@ -230,6 +238,34 @@ function prodFilter(q) {
             ${stockBadge}
         </div>`;
     }).join('');
+
+    const hasMore = list.length > _prodListDisplayLimit;
+    const sentinelHtml = hasMore ? `<div id="prod-sentinel" style="grid-column:1/-1;text-align:center;padding:24px"><div class="biz-loading"><i class="fas fa-spinner fa-spin"></i> Memuat...</div></div>` : '';
+
+    if (isFullRender) {
+        grid.innerHTML = html + sentinelHtml;
+    } else {
+        const oldSentinel = document.getElementById('prod-sentinel');
+        if (oldSentinel) oldSentinel.remove();
+        grid.insertAdjacentHTML('beforeend', html + sentinelHtml);
+    }
+
+    if (hasMore) _attachProdObserver(q);
+}
+
+let _prodObserver = null;
+function _attachProdObserver(q) {
+    if (_prodObserver) _prodObserver.disconnect();
+    const sentinel = document.getElementById('prod-sentinel');
+    if (!sentinel) return;
+    _prodObserver = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+            _prodObserver.disconnect();
+            _prodListDisplayLimit += 30;
+            setTimeout(() => prodFilter(q, true), 50);
+        }
+    }, { rootMargin: '200px' });
+    _prodObserver.observe(sentinel);
 }
 
 window.bizLoadProducts = bizLoadProducts;

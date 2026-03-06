@@ -10,63 +10,73 @@ async function bizLoadDashboard() {
     const bizId = window.bizState.businessId;
 
     container.innerHTML = `<div class="biz-page" id="biz-dash-page">
+        <!-- Dashboard Header -->
+        <div class="biz-section-header" style="margin-bottom:16px; border-bottom:1px solid var(--biz-border); padding-bottom:12px">
+            <h2 class="biz-page-title" style="font-size:22px;letter-spacing:-0.5px">Hari Ini</h2>
+            <div style="font-size:13px;color:var(--biz-text-muted);font-weight:600" id="dash-date">${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+        </div>
+
+        <!-- Big Numbers (Today) -->
+        <div class="biz-row" id="dash-kpi-grid" style="margin-bottom:16px;gap:8px">
+            <!-- Injected via JS -->
+            <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i></div>
+        </div>
+
+        <!-- Top Product & Health -->
+        <div class="biz-row" style="flex-wrap:nowrap;gap:8px;margin-bottom:20px">
+            <div id="dash-health-card" class="biz-card" style="flex:1;min-width:130px;padding:14px;text-align:center">
+                <div style="font-size:11px;font-weight:700;color:var(--biz-text-muted);margin-bottom:6px">Health Score</div>
+                <div class="biz-health-score-num" style="font-size:30px" id="dash-health-num">—</div>
+                <div id="dash-health-status" style="font-size:11px;font-weight:700;margin-top:2px">—</div>
+            </div>
+
+            <div class="biz-card" style="flex:1.5;min-width:160px;padding:14px;display:flex;flex-direction:column;justify-content:center">
+                <div style="font-size:11px;font-weight:700;color:var(--biz-text-muted);margin-bottom:6px"><i class="fas fa-crown" style="color:#f59e0b"></i> Top Product</div>
+                <div id="dash-top-product-highlight">
+                    <div style="font-size:14px;font-weight:700;color:var(--biz-text)">—</div>
+                    <div style="font-size:11px;color:var(--biz-text-muted)">Sold: 0</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Quick Actions -->
-        <div class="biz-quick-actions" id="dash-quick-actions">
+        <div class="biz-quick-actions" id="dash-quick-actions" style="margin-bottom:20px">
             <button class="biz-quick-btn" onclick="bizOpenModal('biz-modal-quick-sale')">
-                <i class="fas fa-bolt" style="color:var(--biz-warning)"></i>Quick Sale
-            </button>
-            <button class="biz-quick-btn" onclick="bizSwitchTab('sales')">
-                <i class="fas fa-receipt" style="color:var(--biz-primary)"></i>Semua Sales
+                <i class="fas fa-bolt" style="color:var(--biz-warning)"></i> + Sale
             </button>
             <button class="biz-quick-btn" onclick="bizOpenModal('biz-modal-expense')">
-                <i class="fas fa-arrow-trend-down" style="color:var(--biz-danger)"></i>Catat Biaya
+                <i class="fas fa-arrow-trend-down" style="color:var(--biz-danger)"></i> + Expense
+            </button>
+            <button class="biz-quick-btn" onclick="bizOpenModal('biz-modal-product'); setTimeout(()=>document.getElementById('prod-name').focus(),200)">
+                <i class="fas fa-box" style="color:var(--biz-primary)"></i> + Product
             </button>
         </div>
 
-        <!-- KPI Cards -->
-        <div class="biz-kpi-grid" id="dash-kpi-grid">
-            ${_dashKpiSkeleton()}
-        </div>
-
-        <!-- Backup reminder (shown if needed) -->
-        <div id="dash-backup-reminder" style="display:none"></div>
-
-        <!-- Insight Box + Health Score row -->
-        <div class="biz-row" style="flex-wrap:wrap;gap:12px;margin-bottom:14px">
-            <div id="dash-health-card" class="biz-card" style="flex:1;min-width:140px;text-align:center">
-                <div class="biz-card-title" style="justify-content:center;margin-bottom:12px"><i class="fas fa-heart-pulse" style="color:var(--biz-danger)"></i> Health</div>
-                <div class="biz-health-score-num" id="dash-health-num">—</div>
-                <div class="biz-health-status" id="dash-health-status" style="color:var(--biz-text-muted)">Menghitung...</div>
+        <!-- Smart AI Insights (Insight Feed) -->
+        <div class="biz-card" style="margin-bottom:20px;border:1px solid var(--biz-border-strong);border-bottom:3px solid var(--biz-success)">
+            <div class="biz-card-header" style="margin-bottom:12px">
+                <div class="biz-card-title"><i class="fas fa-wand-magic-sparkles" style="color:var(--biz-success)"></i> Business Insight</div>
             </div>
-            <div id="dash-forecast-card" class="biz-card" style="flex:1;min-width:140px">
-                <div class="biz-card-title" style="margin-bottom:10px"><i class="fas fa-droplet" style="color:var(--biz-info)"></i> Cash Forecast</div>
-                <div class="biz-forecast-runway" id="dash-forecast-runway">—</div>
-                <div style="font-size:11px;color:var(--biz-text-muted);margin-top:4px" id="dash-forecast-label">Menghitung...</div>
+            <div id="dash-insight-feed" style="display:flex;flex-direction:column;gap:10px;">
+                <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i> Analisa berjalan...</div>
             </div>
         </div>
 
         <!-- Chart -->
         <div class="biz-chart-wrap" id="dash-chart-section">
-            <div class="biz-card-header">
-                <div class="biz-card-title"><i class="fas fa-chart-area" style="color:var(--biz-primary)"></i> Revenue 14 Hari</div>
+            <div class="biz-card-header" style="margin-bottom:0">
+                <div class="biz-card-title"><i class="fas fa-chart-area" style="color:var(--biz-primary)"></i> Revenue 7 Hari</div>
             </div>
-            <div id="dash-chart-container"><svg class="biz-sparkline-svg" style="opacity:.3"><text x="50%" y="50%" text-anchor="middle" fill="var(--biz-text-muted)" font-size="12">Memuat data...</text></svg></div>
-            <div class="biz-chart-labels" id="dash-chart-labels"></div>
-        </div>
-
-        <!-- Top Products -->
-        <div class="biz-card">
-            <div class="biz-card-header">
-                <div class="biz-card-title"><i class="fas fa-trophy" style="color:var(--biz-warning)"></i> Top Produk Bulan Ini</div>
-                <button class="biz-card-action" onclick="bizSwitchTab('reports')">Lihat →</button>
+            <div id="dash-chart-container">
+                <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i></div>
             </div>
-            <div id="dash-top-products"><div class="biz-loading"><i class="fas fa-spinner fa-spin"></i></div></div>
+            <div id="dash-chart-labels"></div>
         </div>
-
+        
         <!-- Recent Sales -->
-        <div class="biz-card" style="margin-top:14px">
+        <div class="biz-card" style="margin-top:16px">
             <div class="biz-card-header">
-                <div class="biz-card-title"><i class="fas fa-clock" style="color:var(--biz-primary)"></i> Penjualan Terbaru</div>
+                <div class="biz-card-title">Penjualan Terbaru</div>
                 <button class="biz-card-action" onclick="bizSwitchTab('sales')">Semua →</button>
             </div>
             <div id="dash-recent-sales"><div class="biz-loading"><i class="fas fa-spinner fa-spin"></i></div></div>
@@ -103,22 +113,21 @@ async function bizLoadDashboard() {
     const expToday = todaySnap.expenses || 0;
 
     // KPI
+    const marginToday = revenueToday > 0 ? ((profitToday / revenueToday) * 100).toFixed(0) : 0;
+
+    // KPI Big Numbers (Today) - 3 Columns
     document.getElementById('dash-kpi-grid').innerHTML = `
-        <div class="biz-kpi-card revenue">
-            <div class="biz-kpi-label"><i class="fas fa-arrow-trend-up"></i> Revenue Hari Ini</div>
-            <div class="biz-kpi-value">${bizRp(revenueToday)}</div>
+        <div class="biz-card" style="flex:1.5; padding:16px 12px; text-align:center">
+            <div style="font-size:11px;font-weight:700;color:var(--biz-text-muted);margin-bottom:4px;text-transform:uppercase">Revenue</div>
+            <div style="font-size:20px;font-weight:800;color:var(--biz-text);letter-spacing:-0.5px;max-width:100%">${bizRp(revenueToday)}</div>
         </div>
-        <div class="biz-kpi-card profit">
-            <div class="biz-kpi-label"><i class="fas fa-sack-dollar"></i> Profit</div>
-            <div class="biz-kpi-value" style="color:var(--biz-success)">${bizRp(profitToday)}</div>
+        <div class="biz-card" style="flex:1.5; padding:16px 12px; text-align:center">
+            <div style="font-size:11px;font-weight:700;color:var(--biz-text-muted);margin-bottom:4px;text-transform:uppercase">Profit</div>
+            <div style="font-size:20px;font-weight:800;color:var(--biz-success);letter-spacing:-0.5px">${bizRp(profitToday)}</div>
         </div>
-        <div class="biz-kpi-card orders">
-            <div class="biz-kpi-label"><i class="fas fa-receipt"></i> Pesanan</div>
-            <div class="biz-kpi-value">${ordersToday}</div>
-        </div>
-        <div class="biz-kpi-card expense">
-            <div class="biz-kpi-label"><i class="fas fa-arrow-trend-down"></i> Pengeluaran</div>
-            <div class="biz-kpi-value" style="color:var(--biz-danger)">${bizRp(expToday)}</div>
+        <div class="biz-card" style="flex:1; padding:16px 12px; text-align:center; background:var(--biz-surface-2)">
+            <div style="font-size:11px;font-weight:700;color:var(--biz-text-muted);margin-bottom:4px;text-transform:uppercase">Margin</div>
+            <div style="font-size:20px;font-weight:800;color:var(--biz-primary)">${marginToday}%</div>
         </div>`;
 
     // Intelligence — Health Score
@@ -129,25 +138,9 @@ async function bizLoadDashboard() {
         document.getElementById('dash-health-status').style.color = color;
     }
 
-    // Intelligence — Cashflow Forecast
-    if (typeof bizCashForecast === 'function') {
-        const forecast = bizCashForecast(snapshots);
-        const fEl = document.getElementById('dash-forecast-runway');
-        const lEl = document.getElementById('dash-forecast-label');
-        if (forecast.netDaily >= 0) {
-            fEl.textContent = '📈 Positif';
-            fEl.className = 'biz-forecast-runway good';
-            lEl.textContent = `Cashflow +${bizRp(forecast.netDaily)}/hari`;
-        } else {
-            const days = forecast.runway;
-            fEl.textContent = days !== null ? `${days} hari` : '—';
-            fEl.className = `biz-forecast-runway ${days === null ? '' : days > 30 ? 'good' : days > 14 ? 'caution' : 'danger'}`;
-            lEl.textContent = days !== null ? 'Estimasi kas tahan' : 'Belum ada data';
-        }
-    }
 
     // Chart — 14 day sparkline
-    _dashRenderChart(snapshots);
+    _dashRenderChart(snapshots, bizId);
 
     // Top Products
     _dashRenderTopProducts(saleItems, monthKey);
@@ -157,6 +150,20 @@ async function bizLoadDashboard() {
 
     // Backup reminder
     if (typeof bizCheckBackupReminder === 'function') bizCheckBackupReminder('dash-backup-reminder');
+
+    // Load AI Advisor Insights
+    if (typeof bizGenerateInsights === 'function') {
+        const insights = await bizGenerateInsights(bizId);
+        const ifeed = document.getElementById('dash-insight-feed');
+        if (ifeed) {
+            ifeed.innerHTML = insights.map(ins => `
+                <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--biz-${ins.type}-bg, rgba(0,0,0,0.03));border:1px solid rgba(0,0,0,0.05);border-radius:12px">
+                    <div style="color:var(--biz-${ins.type});margin-top:2px"><i class="fas ${ins.icon}"></i></div>
+                    <div style="flex:1;font-size:13px;line-height:1.45;color:var(--biz-text)">${ins.text}</div>
+                </div>
+            `).join('');
+        }
+    }
 }
 
 function _dashKpiSkeleton() {
@@ -167,76 +174,72 @@ function _dashKpiSkeleton() {
         </div>`).join('');
 }
 
-function _dashRenderChart(snapshots) {
-    // Get last 14 days
-    const days = Array.from({ length: 14 }, (_, i) => {
+function _dashRenderChart(snapshots, bizId) {
+    // Get last 7 days
+    const days = Array.from({ length: 7 }, (_, i) => {
         const d = new Date();
-        d.setDate(d.getDate() - (13 - i));
+        d.setDate(d.getDate() - (6 - i));
         return d.toISOString().split('T')[0];
     });
     const values = days.map(d => {
-        const snap = snapshots.find(s => s.snapshot_date === d);
+        const snap = snapshots.find(s => s.snapshot_date === d && s.business_id === bizId);
         return snap ? (snap.revenue || 0) : 0;
     });
     const max = Math.max(...values, 1);
 
-    const w = 300, h = 70, pad = 4;
-    const dx = (w - pad * 2) / (values.length - 1);
-    const pts = values.map((v, i) => `${pad + i * dx},${h - pad - ((v / max) * (h - pad * 2))}`);
+    const formatNum = (v) => {
+        if (v === 0) return '';
+        if (v >= 1000000) return (v / 1000000).toFixed(1).replace('.0', '') + 'M';
+        if (v >= 1000) return (v / 1000).toFixed(0) + 'K';
+        return v;
+    };
+
+    const formatDay = (dStr) => {
+        const d = new Date(dStr);
+        return d.toLocaleDateString('id-ID', { weekday: 'short' });
+    };
 
     document.getElementById('dash-chart-container').innerHTML = `
-        <svg viewBox="0 0 ${w} ${h}" class="biz-sparkline-svg" style="height:70px">
-            <defs>
-                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#6366f1" stop-opacity="0.3"/>
-                    <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
-                </linearGradient>
-            </defs>
-            <path d="M${pts.join(' L')} L${pad + (values.length - 1) * dx},${h} L${pad},${h} Z" fill="url(#chartGrad)"/>
-            <polyline points="${pts.join(' ')}" fill="none" stroke="#6366f1" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-            <circle cx="${pts[pts.length - 1].split(',')[0]}" cy="${pts[pts.length - 1].split(',')[1]}" r="4" fill="#6366f1"/>
-        </svg>`;
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;height:100px;padding-top:15px;gap:6px">
+            ${values.map((v, i) => {
+        const h = Math.max((v / max) * 100, 4); // min 4%
+        return `
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">
+                    <div style="font-size:10px;font-weight:700;color:var(--biz-text-muted);margin-bottom:6px;letter-spacing:-0.5px">${formatNum(v)}</div>
+                    <div style="width:100%;max-width:32px;background:var(--biz-primary);border-radius:6px 6px 0 0;height:${h}%;opacity:${i === 6 ? 1 : 0.6};transition:all 0.3s ease"></div>
+                </div>`;
+    }).join('')}
+        </div>
+    `;
 
-    document.getElementById('dash-chart-labels').innerHTML =
-        `<span>${days[0].slice(5)}</span><span>${days[6].slice(5)}</span><span>${days[13].slice(5)}</span>`;
+    document.getElementById('dash-chart-labels').innerHTML = `
+        <div style="display:flex;justify-content:space-between;margin-top:8px">
+            ${days.map(d => `<div style="flex:1;text-align:center;font-size:10px;color:var(--biz-text-dim);font-weight:600">${formatDay(d)}</div>`).join('')}
+        </div>
+    `;
 }
 
 async function _dashRenderTopProducts(saleItems, monthKey) {
-    const el = document.getElementById('dash-top-products');
+    const el = document.getElementById('dash-top-product-highlight');
     if (!el) return;
 
-    const monthItems = saleItems.filter(si => {
-        // sale_items have sale_id — need to check via sale; approximate by created_at
-        return si.created_at && si.created_at.startsWith(monthKey);
-    });
-
+    const monthItems = saleItems.filter(si => si.created_at && si.created_at.startsWith(monthKey));
     const freq = {};
     monthItems.forEach(si => {
-        if (!freq[si.product_id]) freq[si.product_id] = { name: si.product_name, qty: 0, profit: 0 };
+        if (!freq[si.product_id]) freq[si.product_id] = { name: si.product_name, qty: 0 };
         freq[si.product_id].qty += si.quantity;
-        freq[si.product_id].profit += si.profit || 0;
     });
 
-    const sorted = Object.values(freq).sort((a, b) => b.profit - a.profit).slice(0, 5);
-
+    const sorted = Object.values(freq).sort((a, b) => b.qty - a.qty);
     if (!sorted.length) {
-        el.innerHTML = '<div class="biz-empty" style="padding:24px"><i class="fas fa-box-open"></i> Belum ada penjualan bulan ini</div>';
+        el.innerHTML = `<div style="font-size:16px;font-weight:700;color:var(--biz-text)">—</div>
+                        <div style="font-size:12px;color:var(--biz-text-muted)">Belum ada data</div>`;
         return;
     }
 
-    const rankClass = ['gold', 'silver', 'bronze'];
-    el.innerHTML = sorted.map((p, i) => `
-        <div class="biz-top-product-item">
-            <div class="biz-rank ${rankClass[i] || ''}">${i + 1}</div>
-            <div style="flex:1">
-                <div class="biz-list-name">${_esc(p.name)}</div>
-                <div class="biz-list-sub">${p.qty} terjual</div>
-            </div>
-            <div style="text-align:right">
-                <div style="font-size:13px;font-weight:700;color:var(--biz-success)">${bizRp(p.profit)}</div>
-                <div class="biz-list-sub">profit</div>
-            </div>
-        </div>`).join('');
+    const top = sorted[0];
+    el.innerHTML = `<div style="font-size:16px;font-weight:700;color:var(--biz-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${_esc(top.name)}">${_esc(top.name)}</div>
+                    <div style="font-size:12px;color:var(--biz-text-muted);font-weight:600">Sold: <span style="color:var(--biz-primary)">${top.qty}</span></div>`;
 }
 
 function _dashRenderRecentSales(sales) {

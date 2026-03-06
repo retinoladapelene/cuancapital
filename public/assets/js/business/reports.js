@@ -7,118 +7,115 @@ async function bizLoadReports() {
     const container = document.getElementById('biz-app-container');
     if (!container) return;
 
-    const [snapshots, saleItems] = await Promise.all([BizDB.finSnapshots.getAll(), BizDB.saleItems.getAll()]);
+    // Show loading skeleton
+    container.innerHTML = `<div class="biz-page"><div class="biz-loading" style="padding:40px;text-align:center"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--biz-primary)"></i></div></div>`;
 
-    // Build 6-month data
-    const months = Array.from({ length: 6 }, (_, i) => {
-        const d = new Date();
-        d.setMonth(d.getMonth() - (5 - i));
-        return d.toISOString().slice(0, 7);
-    });
+    const businessId = window.UserBusiness?.id || 'TEST_BIZ_1';
+    const monthKey = bizMonthKey();
 
-    const monthData = months.map(mk => {
-        const snaps = snapshots.filter(s => s.snapshot_date && s.snapshot_date.startsWith(mk));
-        return {
-            month: mk,
-            label: new Date(mk + '-01').toLocaleDateString('id-ID', { month: 'short' }),
-            revenue: snaps.reduce((s, r) => s + (r.revenue || 0), 0),
-            profit: snaps.reduce((s, r) => s + (r.profit || 0), 0),
-            expenses: snaps.reduce((s, r) => s + (r.expenses || 0), 0),
-        };
-    });
+    // Fetch all insights in parallel
+    const [snapshots, profitData, momentumData, timeData, leakData, invData] = await Promise.all([
+        BizDB.finSnapshots.getAll(),
+        bizProfitAnalyzer(businessId, monthKey),
+        bizProductMomentum(businessId),
+        bizBestSalesTime(businessId),
+        bizExpenseLeakDetector(businessId),
+        bizInventoryHealth(businessId)
+    ]);
 
-    const maxRev = Math.max(...monthData.map(m => m.revenue), 1);
+    const health = bizHealthScore(snapshots, businessId);
 
-    // Product performance (current month)
-    const thisMonth = bizMonthKey();
-    const monthItems = saleItems.filter(si => si.created_at && si.created_at.startsWith(thisMonth));
-    const prodPerf = {};
-    monthItems.forEach(si => {
-        if (!prodPerf[si.product_id]) prodPerf[si.product_id] = { name: si.product_name, qty: 0, revenue: 0, profit: 0 };
-        prodPerf[si.product_id].qty += si.quantity;
-        prodPerf[si.product_id].revenue += si.subtotal;
-        prodPerf[si.product_id].profit += si.profit;
-    });
-    const prodSorted = Object.values(prodPerf).sort((a, b) => b.revenue - a.revenue);
+    // Build Profit Radar UI
+    let profitHtml = '';
+    let lossHtml = '';
+    if (profitData && profitData.products) {
+        const topProfitable = profitData.products.filter(p => p.margin >= 10).slice(0, 3);
+        const lossProducts = profitData.products.filter(p => p.margin < 0).slice(0, 3);
 
-    // Expense breakdown
-    const monthSnaps = snapshots.filter(s => s.snapshot_date && s.snapshot_date.startsWith(thisMonth));
-    const totalRevM = monthSnaps.reduce((s, r) => s + (r.revenue || 0), 0);
-    const totalProfM = monthSnaps.reduce((s, r) => s + (r.profit || 0), 0);
-    const totalExpM = monthSnaps.reduce((s, r) => s + (r.expenses || 0), 0);
-    const totalSalesM = monthSnaps.reduce((s, r) => s + (r.orders_count || 0), 0);
-    const margin = totalRevM > 0 ? ((totalProfM / totalRevM) * 100).toFixed(1) : 0;
+        if (topProfitable.length) {
+            profitHtml = topProfitable.map((p, i) => `
+                <div class="biz-list-item">
+                    <div style="display:flex;align-items:center;gap:12px">
+                        <div class="biz-rank ${i === 0 ? 'gold' : i === 1 ? 'silver' : 'bronze'}">${i + 1}</div>
+                        <span style="font-weight:600;font-size:13px">${_esc(p.name)}</span>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="color:var(--biz-success);font-weight:800;font-size:13px">+${bizRp(p.profit)}</div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            profitHtml = `<div class="biz-empty" style="padding:16px"><i class="fas fa-box-open"></i><br>Belum ada data profit</div>`;
+        }
+
+        if (lossProducts.length) {
+            lossHtml = `
+            <div class="biz-card" style="margin-bottom:14px;border:1px solid rgba(239, 68, 68, 0.3)">
+                <div class="biz-card-title" style="margin-bottom:12px;color:var(--biz-danger)"><i class="fas fa-triangle-exclamation"></i> Loss Product (Rugi)</div>
+                ${lossProducts.map(p => `
+                    <div class="biz-list-item">
+                        <span style="font-weight:600;font-size:13px">${_esc(p.name)}</span>
+                        <div style="color:var(--biz-danger);font-weight:800;font-size:13px">${bizRp(p.profit)}</div>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+    }
+
+    // Build Momentum UI
+    let momentumHtml = '';
+    if (momentumData && momentumData.trending.length) {
+        momentumHtml = `
+        <div class="biz-card" style="margin-bottom:14px">
+            <div class="biz-card-title" style="margin-bottom:12px"><i class="fas fa-arrow-trend-up" style="color:var(--biz-primary)"></i> Trending Products</div>
+            ${momentumData.trending.slice(0, 3).map(p => `
+                <div class="biz-list-item">
+                    <span style="font-weight:600;font-size:13px">${_esc(p.name)}</span>
+                    <div style="color:var(--biz-success);font-weight:700;font-size:12px">Naik ${p.growth.toFixed(0)}%</div>
+                </div>
+            `).join('')}
+        </div>`;
+    }
+
+    // Build Peak Hour UI
+    let timeHtml = '';
+    if (timeData && timeData.maxSales > 0) {
+        timeHtml = `
+        <div class="biz-card" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+                <div style="font-size:12px;color:var(--biz-text-muted);font-weight:600;margin-bottom:4px">Best Sales Time</div>
+                <div style="font-size:18px;font-weight:800;color:var(--biz-primary)">${timeData.timeLabel}</div>
+            </div>
+            <i class="fas fa-clock" style="font-size:24px;color:var(--biz-border-strong)"></i>
+        </div>`;
+    }
 
     container.innerHTML = `<div class="biz-page">
 
-        <!-- Month summary -->
-        <div class="biz-summary-strip" style="margin-bottom:14px">
-            <div class="biz-strip-item"><div class="biz-strip-label">Revenue</div><div class="biz-strip-value">${bizRp(totalRevM)}</div></div>
-            <div class="biz-strip-item"><div class="biz-strip-label">Profit</div><div class="biz-strip-value" style="color:var(--biz-success)">${bizRp(totalProfM)}</div></div>
-            <div class="biz-strip-item"><div class="biz-strip-label">Margin</div><div class="biz-strip-value" style="color:var(--biz-primary)">${margin}%</div></div>
-            <div class="biz-strip-item"><div class="biz-strip-label">Transaksi</div><div class="biz-strip-value">${totalSalesM}</div></div>
+        <!-- Business Health Score -->
+        <div class="biz-card biz-health-card" style="margin-bottom:14px">
+            <div style="font-size:12px;font-weight:700;color:var(--biz-text-muted);margin-bottom:8px">Business Health Score</div>
+            <div class="biz-health-score-num">${health.score} <span style="font-size:16px;color:var(--biz-text-muted)">/ 100</span></div>
+            <div class="biz-health-status" style="color:${health.color}">${health.status}</div>
         </div>
 
-        <!-- 6-month bar chart -->
-        <div class="biz-chart-wrap">
-            <div class="biz-card-header">
-                <div class="biz-card-title"><i class="fas fa-chart-bar" style="color:var(--biz-primary)"></i> Revenue 6 Bulan</div>
-            </div>
-            <div class="biz-report-bar-wrap">
-                ${monthData.map(m => {
-        const h = maxRev > 0 ? Math.max(4, (m.revenue / maxRev) * 110) : 4;
-        return `<div class="biz-report-bar-col">
-                        <div style="font-size:9px;color:var(--biz-text-muted);font-weight:700">${bizRp(m.revenue)}</div>
-                        <div class="biz-report-bar revenue" style="height:${h}px" title="${m.label}: ${bizRpFull(m.revenue)}"></div>
-                        <div class="biz-report-bar-label">${m.label}</div>
-                    </div>`;
-    }).join('')}
-            </div>
-        </div>
-
-        <!-- Revenue vs Expense legend -->
+        <!-- Profit Radar -->
         <div class="biz-card" style="margin-bottom:14px">
-            <div class="biz-card-title" style="margin-bottom:14px"><i class="fas fa-scale-balanced"></i> Revenue vs Pengeluaran</div>
-            ${monthData.map(m => {
-        const maxV = Math.max(m.revenue, m.expenses, 1);
-        const rPct = Math.round((m.revenue / maxV) * 100);
-        const ePct = Math.round((m.expenses / maxV) * 100);
-        return `<div style="margin-bottom:12px">
-                    <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
-                        <span style="color:var(--biz-text-muted);font-weight:700">${m.label}</span>
-                        <span style="color:var(--biz-success);font-weight:700">+${bizRp(m.profit)}</span>
-                    </div>
-                    <div class="biz-breakdown-bar-track" style="height:6px;margin-bottom:3px">
-                        <div class="biz-breakdown-bar-fill" style="width:${rPct}%;background:var(--biz-primary)"></div>
-                    </div>
-                    <div class="biz-breakdown-bar-track" style="height:6px">
-                        <div class="biz-breakdown-bar-fill" style="width:${ePct}%;background:var(--biz-danger)"></div>
-                    </div>
-                </div>`;
-    }).join('')}
-            <div style="display:flex;gap:16px;font-size:11px;font-weight:700;margin-top:8px">
-                <span style="color:var(--biz-primary)">█ Revenue</span>
-                <span style="color:var(--biz-danger)">█ Pengeluaran</span>
+            <div class="biz-card-title" style="margin-bottom:12px"><i class="fas fa-radar" style="color:var(--biz-success)"></i> Most Profitable Product</div>
+            <div style="display:flex;flex-direction:column">
+                ${profitHtml}
             </div>
         </div>
 
-        <!-- Product Performance -->
-        <div class="biz-card">
-            <div class="biz-card-title" style="margin-bottom:14px">
-                <i class="fas fa-box" style="color:var(--biz-primary)"></i> Performa Produk Bulan Ini
-            </div>
-            ${prodSorted.length ? `
-            <div style="display:grid;grid-template-columns:1fr 60px 80px 80px;gap:8px;font-size:10px;font-weight:700;color:var(--biz-text-muted);margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--biz-border);text-transform:uppercase">
-                <span>Produk</span><span style="text-align:right">Qty</span><span style="text-align:right">Revenue</span><span style="text-align:right">Profit</span>
-            </div>
-            ${prodSorted.map((p, i) => `
-            <div style="display:grid;grid-template-columns:1fr 60px 80px 80px;gap:8px;padding:8px 0;border-bottom:1px solid var(--biz-border);font-size:12px">
-                <span style="font-weight:600">${_esc(p.name)}</span>
-                <span style="text-align:right;color:var(--biz-text-muted)">${p.qty}</span>
-                <span style="text-align:right;font-weight:700">${bizRp(p.revenue)}</span>
-                <span style="text-align:right;font-weight:700;color:var(--biz-success)">${bizRp(p.profit)}</span>
-            </div>`).join('')}` :
-            '<div class="biz-empty" style="padding:24px"><i class="fas fa-box-open"></i><br>Belum ada penjualan bulan ini</div>'}
+        ${lossHtml}
+        ${momentumHtml}
+        ${timeHtml}
+
+        <!-- Inventory Health Score -->
+        <div class="biz-card" style="margin-bottom:14px;text-align:center">
+            <div style="font-size:12px;font-weight:700;color:var(--biz-text-muted);margin-bottom:8px">Inventory Health</div>
+            <div style="font-size:32px;font-weight:800;color:${invData.score >= 80 ? 'var(--biz-success)' : invData.score >= 50 ? 'var(--biz-warning)' : 'var(--biz-danger)'}">${invData.score} <span style="font-size:14px;color:var(--biz-text-muted)">/ 100</span></div>
+            <div style="font-size:11px;color:var(--biz-text-muted);margin-top:6px">${invData.outStockCount} Kosong · ${invData.lowStockCount} Menipis · ${invData.overStockCount} Overstock</div>
         </div>
 
     </div>`;

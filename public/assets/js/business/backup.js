@@ -113,6 +113,13 @@ async function bizImportData(input) {
                         window.bizState.businessId = d.businesses[0].id;
                     }
 
+                    // Trigger Snapshot Rebuild Engine to ensure exact data integrity
+                    if (typeof bizRebuildSnapshots === 'function' && d.businesses) {
+                        for (const biz of d.businesses) {
+                            await bizRebuildSnapshots(biz.id);
+                        }
+                    }
+
                     await bizPreloadProducts?.();
                     bizClearIntelligenceCache?.();
                     bizToast('✅ Data berhasil di-restore', 's');

@@ -40,7 +40,7 @@ function qsSelectProduct(productId) {
     document.getElementById('qs-qty').value = 1;
     document.getElementById('qs-selected').style.display = 'block';
     document.getElementById('qs-pay-wrap').style.display = 'block';
-    document.getElementById('qs-save-btn').style.display = 'block';
+    document.getElementById('qs-footer').style.display = 'block';
     qsUpdateTotal();
 }
 window.qsSelectProduct = qsSelectProduct;
@@ -82,7 +82,7 @@ function qsClear() {
     _qsProduct = null;
     document.getElementById('qs-selected').style.display = 'none';
     document.getElementById('qs-pay-wrap').style.display = 'none';
-    document.getElementById('qs-save-btn').style.display = 'none';
+    document.getElementById('qs-footer').style.display = 'none';
     document.getElementById('qs-search').value = '';
 }
 async function qsSave() {
@@ -113,7 +113,7 @@ async function qsSave() {
 }
 function _qsReset() {
     _qsProduct = null;
-    const ids = ['qs-selected', 'qs-pay-wrap', 'qs-save-btn'];
+    const ids = ['qs-selected', 'qs-pay-wrap', 'qs-footer', 'qs-repeat-wrap'];
     ids.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     const si = document.getElementById('qs-search');
     if (si) si.value = '';
@@ -191,6 +191,7 @@ function posRenderCart() {
     const cEl = document.getElementById('pos-cart-items');
     const eEl = document.getElementById('pos-empty-cart');
     const tEl = document.getElementById('pos-totals');
+    const fEl = document.getElementById('pos-footer');
     if (!cEl) return;
 
     document.getElementById('pos-quick-chips').innerHTML =
@@ -198,9 +199,12 @@ function posRenderCart() {
             `<span class="biz-quick-product-chip" onclick="posAddProduct('${p.id}')">${_esc(p.name)}</span>`).join('');
 
     if (!_posCart.length) {
-        cEl.innerHTML = ''; eEl.style.display = 'block'; tEl.style.display = 'none'; return;
+        cEl.innerHTML = ''; eEl.style.display = 'block'; tEl.style.display = 'none';
+        if (fEl) fEl.style.display = 'none';
+        return;
     }
     eEl.style.display = 'none'; tEl.style.display = 'block';
+    if (fEl) fEl.style.display = 'block';
 
     let total = 0, profit = 0;
     cEl.innerHTML = _posCart.map((item, i) => {

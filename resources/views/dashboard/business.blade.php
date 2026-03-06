@@ -58,7 +58,7 @@
         <i class="fas fa-wallet"></i> Keuangan
       </button>
       <button class="biz-sidebar-link" data-tab="reports" onclick="bizSwitchTab('reports',this)">
-        <i class="fas fa-chart-bar"></i> Laporan
+        <i class="fas fa-chart-pie"></i> Analytics
       </button>
     </div>
 
@@ -118,37 +118,48 @@
 </div><!-- /shell -->
 
 <!-- ══════════════════════════════════════════════════════════════
-     MOBILE BOTTOM NAVIGATION
+     MOBILE BOTTOM NAVIGATION (5 Tabs)
      ══════════════════════════════════════════════════════════════ -->
 <nav class="biz-mob-nav" id="biz-mob-nav" role="navigation" aria-label="Mobile Navigation">
-
   <button id="biz-mob-dashboard" class="biz-nav-btn active" onclick="bizSwitchTab('dashboard',this)" aria-label="Dashboard">
-    <i class="fas fa-house"></i>
-    <span>Home</span>
+    <i class="fas fa-house"></i><span>Home</span>
   </button>
-
-  <button id="biz-mob-sales" class="biz-nav-btn" onclick="bizSwitchTab('sales',this)" aria-label="Penjualan">
-    <i class="fas fa-receipt"></i>
-    <span>Sales</span>
+  <button id="biz-mob-sales" class="biz-nav-btn" onclick="bizSwitchTab('sales',this)">
+    <i class="fas fa-receipt"></i><span>Sales</span>
   </button>
-
-  <!-- Center FAB — Quick Sale -->
-  <button class="biz-nav-btn fab" onclick="bizOpenModal('biz-modal-quick-sale')" aria-label="Tambah Penjualan Cepat">
-    <div class="fab-circle"><i class="fas fa-plus"></i></div>
-    <span class="fab-label">Jual</span>
+  <button id="biz-mob-products" class="biz-nav-btn" onclick="bizSwitchTab('products',this)">
+    <i class="fas fa-box"></i><span>Products</span>
   </button>
-
-  <button id="biz-mob-products" class="biz-nav-btn" onclick="bizSwitchTab('products',this)" aria-label="Produk">
-    <i class="fas fa-box"></i>
-    <span>Produk</span>
+  <button id="biz-mob-reports" class="biz-nav-btn" onclick="bizSwitchTab('reports',this)">
+    <i class="fas fa-chart-pie"></i><span>Analytics</span>
   </button>
-
-  <button id="biz-mob-reports" class="biz-nav-btn" onclick="bizSwitchTab('reports',this)" aria-label="Laporan">
-    <i class="fas fa-chart-bar"></i>
-    <span>Laporan</span>
+  <button id="biz-mob-more" class="biz-nav-btn" onclick="bizOpenModal('biz-modal-more')">
+    <i class="fas fa-bars"></i><span>More</span>
   </button>
-
 </nav>
+
+<!-- ══════════════════════════════════════════════════════════════
+     GLOBAL FLOATING ACTION BUTTON (FAB)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="biz-global-fab" id="biz-global-fab">
+  <div class="biz-fab-menu" id="biz-fab-menu">
+    <button class="biz-fab-item" onclick="bizToggleFabMenu(); bizOpenModal('biz-modal-product'); setTimeout(()=>document.getElementById('prod-name').focus(),200)">
+      <span>Produk Baru</span>
+      <div class="biz-fab-icon"><i class="fas fa-box"></i></div>
+    </button>
+    <button class="biz-fab-item" onclick="bizToggleFabMenu(); bizOpenModal('biz-modal-expense')">
+      <span>Catat Biaya</span>
+      <div class="biz-fab-icon" style="color:var(--biz-danger)"><i class="fas fa-arrow-trend-down"></i></div>
+    </button>
+    <button class="biz-fab-item" onclick="bizToggleFabMenu(); bizOpenModal('biz-modal-quick-sale')">
+      <span>Quick Sale</span>
+      <div class="biz-fab-icon" style="color:var(--biz-warning)"><i class="fas fa-bolt"></i></div>
+    </button>
+  </div>
+  <button class="biz-fab-main" onclick="bizToggleFabMenu()">
+    <i class="fas fa-plus"></i>
+  </button>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════════
      TOAST
@@ -212,14 +223,17 @@
       </div>
     </div>
 
-    <button id="qs-save-btn" class="biz-btn biz-btn-primary biz-btn-block" onclick="qsSave()" style="display:none">
-      <i class="fas fa-check"></i> Simpan Penjualan
-    </button>
-
     <!-- Repeat last sale shortcut -->
     <div id="qs-repeat-wrap" style="display:none;margin-top:12px;text-align:center">
-      <button class="biz-detail-toggle" onclick="qsRepeatLast()">
+      <button class="biz-detail-toggle" style="margin:0 auto" onclick="qsRepeatLast()">
         <i class="fas fa-rotate-right"></i> Ulangi penjualan terakhir
+      </button>
+    </div>
+
+    <!-- Floating Footer -->
+    <div class="biz-modal-footer" id="qs-footer" style="display:none">
+      <button id="qs-save-btn" class="biz-btn biz-btn-primary biz-btn-block" onclick="qsSave()" style="font-size:15px;padding:14px">
+        <i class="fas fa-check"></i> Simpan Penjualan
       </button>
     </div>
 
@@ -280,8 +294,11 @@
           <span class="biz-pay-chip" data-pay="qris" onclick="posSetPay(this,'qris')">📱 QRIS</span>
         </div>
       </div>
+    </div> <!-- /pos-totals -->
 
-      <button class="biz-btn biz-btn-success biz-btn-block" onclick="posSave()" id="pos-save-btn">
+    <!-- Floating Footer -->
+    <div class="biz-modal-footer" id="pos-footer" style="display:none">
+      <button class="biz-btn biz-btn-success biz-btn-block" onclick="posSave()" id="pos-save-btn" style="font-size:15px;padding:14px">
         <i class="fas fa-check-circle"></i> Selesaikan Penjualan
       </button>
     </div>
@@ -481,6 +498,34 @@
       <i class="fas fa-check"></i> Simpan
     </button>
 
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL: MORE MENU (Mobile Only)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="biz-modal-bg" id="biz-modal-more" onclick="bizCloseOut(event.target === this ? this : null)">
+  <div class="biz-modal" role="dialog" aria-modal="true" aria-labelledby="more-title">
+    <div class="biz-modal-header">
+      <span class="biz-modal-title" id="more-title"><i class="fas fa-bars"></i> Menu Lainnya</span>
+      <button class="biz-modal-close" onclick="bizCloseModal('biz-modal-more')"><i class="fas fa-xmark"></i></button>
+    </div>
+    
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="biz-btn biz-btn-ghost biz-btn-block" style="justify-content:flex-start" onclick="bizCloseModal('biz-modal-more');bizOpenModal('biz-modal-business')">
+        <i class="fas fa-store" style="width:24px"></i> Info Bisnis
+      </button>
+      <button class="biz-btn biz-btn-ghost biz-btn-block" style="justify-content:flex-start" onclick="bizCloseModal('biz-modal-more');bizOpenModal('biz-modal-backup')">
+        <i class="fas fa-shield-halved" style="width:24px;color:var(--biz-success)"></i> Backup Data (JSON)
+      </button>
+      <button class="biz-btn biz-btn-ghost biz-btn-block" style="justify-content:flex-start" onclick="bizToggleTheme()">
+        <i class="fas fa-circle-half-stroke" style="width:24px"></i> Ganti Tema
+      </button>
+      <div class="biz-divider"></div>
+      <a href="/cashbook" class="biz-btn biz-btn-ghost biz-btn-block" style="justify-content:flex-start;text-decoration:none">
+        <i class="fas fa-arrow-left" style="width:24px;color:var(--biz-primary)"></i> Kembali ke Cashbook
+      </a>
+    </div>
   </div>
 </div>
 

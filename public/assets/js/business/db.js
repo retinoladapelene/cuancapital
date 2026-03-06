@@ -292,6 +292,63 @@ async function bizUpsertSnapshot(businessId, date, delta) {
 }
 window.bizUpsertSnapshot = bizUpsertSnapshot;
 
+// ── Snapshot Rebuild Engine (used during JSON Import) ─────────────────────────
+async function bizRebuildSnapshots(businessId) {
+    if (!businessId) return;
+
+    // 1. Fetch raw transaction facts
+    const allSales = await BizDB.sales.getAll();
+    const allExp = await BizDB.expenses.getAll();
+
+    // Filter by business
+    const sales = allSales.filter(s => s.business_id === businessId);
+    const exps = allExp.filter(e => e.business_id === businessId);
+
+    // 2. Clear old snapshots to start fresh
+    const allSnaps = await BizDB.finSnapshots.getAll();
+    const mySnaps = allSnaps.filter(s => s.business_id === businessId);
+    for (const snap of mySnaps) {
+        await BizDB.finSnapshots.delete(snap.id);
+    }
+
+    // 3. Aggregate Data processing
+    const dailyData = {};
+
+    sales.forEach(s => {
+        const date = (s.sale_date || s.created_at).split('T')[0];
+        if (!dailyData[date]) dailyData[date] = { r: 0, p: 0, o: 0, e: 0 };
+        dailyData[date].r += (s.total_amount || 0);
+        dailyData[date].p += (s.total_profit || 0);
+        dailyData[date].o += 1;
+    });
+
+    exps.forEach(e => {
+        const date = (e.expense_date || e.created_at).split('T')[0];
+        if (!dailyData[date]) dailyData[date] = { r: 0, p: 0, o: 0, e: 0 };
+        dailyData[date].e += (e.amount || 0);
+    });
+
+    // 4. Re-insert exact snapshots
+    const newSnaps = Object.keys(dailyData).map(date => ({
+        id: bizUUID(),
+        business_id: businessId,
+        snapshot_date: date,
+        biz_date: businessId + '_' + date,
+        revenue: dailyData[date].r,
+        profit: dailyData[date].p,
+        expenses: dailyData[date].e,
+        orders_count: dailyData[date].o,
+        updated_at: new Date().toISOString()
+    }));
+
+    for (const snap of newSnaps) {
+        await BizDB.finSnapshots.save(snap);
+    }
+
+    console.log(`[Rebuild Engine] Recreated ${newSnaps.length} exact daily snapshots for business ${businessId}`);
+}
+window.bizRebuildSnapshots = bizRebuildSnapshots;
+
 // ── CreateSale Action ─────────────────────────────────────────────────────────
 // Orchestrates: sale + sale_items + stock update + inv_movements + fin_snapshot
 async function bizCreateSale({ businessId, cartItems, paymentMethod, notes, customerId, date }) {
@@ -422,3 +479,72 @@ async function bizCreateExpense({ businessId, categoryId, categoryName, amount, 
     return expenseDoc;
 }
 window.bizCreateExpense = bizCreateExpense;
+
+// ── Snapshot Rebuild Engine ───────────────────────────────────────────────────
+// Recalculates all daily snapshots from raw Sales and Expenses for a given business
+async function bizRebuildSnapshots(businessId) {
+    if (!businessId) return;
+
+    // 1. Delete existing snapshots for this business
+    const existing = await BizDB.finSnapshots.getAll();
+    const toDelete = existing.filter(s => s.business_id === businessId);
+    for (const snap of toDelete) {
+        await BizDB.finSnapshots.delete(snap.id);
+    }
+
+    // 2. Fetch raw data
+    const [allSales, allExp] = await Promise.all([
+        BizDB.sales.getAll(),
+        BizDB.expenses.getAll()
+    ]);
+    const bizSales = allSales.filter(s => s.business_id === businessId && s.status === 'completed');
+    const bizExp = allExp.filter(e => e.business_id === businessId);
+
+    const dailyMap = {}; // { 'YYYY-MM-DD': { revenue, expenses, profit, orders } }
+
+    const ensureDay = (d) => {
+        if (!dailyMap[d]) dailyMap[d] = { revenue: 0, expenses: 0, profit: 0, orders: 0 };
+    };
+
+    // 3. Aggregate Sales
+    bizSales.forEach(s => {
+        const d = s.sale_date;
+        if (!d) return;
+        ensureDay(d);
+        dailyMap[d].revenue += (s.total_amount || 0);
+        dailyMap[d].profit += (s.total_profit || 0);
+        dailyMap[d].orders += 1;
+    });
+
+    // 4. Aggregate Expenses
+    bizExp.forEach(e => {
+        const d = e.expense_date;
+        if (!d) return;
+        ensureDay(d);
+        dailyMap[d].expenses += (e.amount || 0);
+        dailyMap[d].profit -= (e.amount || 0); // expense reduces net profit
+    });
+
+    // 5. Save back to IndexedDB
+    for (const dateKey of Object.keys(dailyMap)) {
+        const day = dailyMap[dateKey];
+        const snap = {
+            id: bizUUID(),
+            business_id: businessId,
+            snapshot_date: dateKey,
+            biz_date: businessId + '_' + dateKey,
+            revenue: day.revenue,
+            expenses: day.expenses,
+            profit: day.profit,
+            orders_count: day.orders,
+            updated_at: new Date().toISOString()
+        };
+        await BizDB.finSnapshots.save(snap);
+    }
+
+    // Clear caches to force UI re-render with fresh data
+    if (typeof bizClearIntelligenceCache === 'function') {
+        bizClearIntelligenceCache();
+    }
+}
+window.bizRebuildSnapshots = bizRebuildSnapshots;

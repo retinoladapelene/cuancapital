@@ -48,3 +48,4 @@ update_enum.php
 append_css.php
 /screenshots
 .phpunit.result.cache
+.env.example
