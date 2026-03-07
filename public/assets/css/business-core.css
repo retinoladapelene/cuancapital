@@ -5,28 +5,28 @@
 
 /* ── Variables ──────────────────────────────────────────────────────── */
 :root {
-    /* Brand - Light Mode is now default (Stripe/Notion style) */
-    --biz-primary: #0F172A;
-    /* Slate 900 */
-    --biz-primary-hover: #1e293b;
-    --biz-primary-light: rgba(15, 23, 42, 0.06);
+    /* Brand - Light Mode (Cuan Capital Emerald) */
+    --biz-primary: #059669;
+    /* Emerald 600 */
+    --biz-primary-hover: #047857;
+    /* Emerald 700 */
+    --biz-primary-light: rgba(5, 150, 105, 0.1);
     --biz-secondary: #334155;
-    --biz-accent-grad: linear-gradient(135deg, #0F172A 0%, #1e293b 100%);
+    --biz-accent-grad: linear-gradient(135deg, #059669 0%, #10b981 100%);
 
     /* Semantic */
-    --biz-success: #22C55E;
-    /* Green 500 */
-    --biz-success-bg: rgba(34, 197, 94, 0.1);
-    --biz-danger: #EF4444;
-    /* Red 500 */
-    --biz-danger-bg: rgba(239, 68, 68, 0.1);
-    --biz-warning: #f59e0b;
-    --biz-warning-bg: rgba(245, 158, 11, 0.1);
-    --biz-info: #3b82f6;
+    --biz-success: #10b981;
+    /* Emerald 500 */
+    --biz-success-bg: rgba(16, 185, 129, 0.12);
+    --biz-danger: #dc2626;
+    /* Red 600 */
+    --biz-danger-bg: rgba(220, 38, 38, 0.1);
+    --biz-warning: #d97706;
+    /* Amber 600 */
+    --biz-warning-bg: rgba(217, 119, 6, 0.1);
+    --biz-info: #2563eb;
     --biz-info-bg: #dbeafe;
-    /* For OVERSTOCK badging */
-    --biz-purple: #8b5cf6;
-    /* For EXPIRING badging */
+    --biz-purple: #7c3aed;
     --biz-purple-bg: #ede9fe;
 
     /* Theme - Defaulting to Light Mode for Native Fintech feel */
@@ -88,11 +88,19 @@
     /* Slate 500 */
     --biz-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
     --biz-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-    /* In dark mode, primary slate gets lightened for visibility as buttons */
-    --biz-primary: #f8fafc;
-    --biz-primary-hover: #ffffff;
-    --biz-primary-light: rgba(255, 255, 255, 0.1);
-    --biz-accent-grad: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    /* Dark mode, emerald pops nicely */
+    --biz-primary: #10b981;
+    /* Emerald 500 */
+    --biz-primary-hover: #34d399;
+    /* Emerald 400 */
+    --biz-primary-light: rgba(16, 185, 129, 0.15);
+    --biz-accent-grad: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+
+    --biz-success: #10b981;
+    --biz-danger: #ef4444;
+    /* Red 500 */
+    --biz-warning: #f59e0b;
+    /* Amber 500 */
 }
 
 /* ── Reset & Base ───────────────────────────────────────────────────── */
@@ -205,22 +213,19 @@ body {
 
 /* ── App Shell Layout ───────────────────────────────────────────────── */
 .biz-shell {
-    display: flex;
-    min-height: 100vh;
+    display: grid;
+    grid-template-columns: var(--biz-sidebar-w) 1fr;
+    height: 100vh;
+    overflow: hidden;
 }
 
 /* Sidebar (desktop) */
 .biz-sidebar {
-    width: var(--biz-sidebar-w);
-    min-height: 100vh;
     background: var(--biz-bg-2);
     border-right: 1px solid var(--biz-border);
     display: flex;
     flex-direction: column;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
+    height: 100vh;
     z-index: 200;
     transition: width .25s ease;
     overflow: hidden;
@@ -266,24 +271,42 @@ body {
 
 .biz-sidebar-nav {
     flex: 1;
-    padding: 12px 8px;
+    padding: 24px 16px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.biz-nav-group {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--biz-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 16px;
+    margin-bottom: 4px;
+    padding: 0 12px;
+}
+
+.biz-nav-group:first-child {
+    margin-top: 0;
 }
 
 .biz-sidebar-link {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    gap: 12px;
+    padding: 8px 12px;
     border-radius: var(--biz-radius-sm);
     color: var(--biz-text-muted);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     text-decoration: none;
     cursor: pointer;
-    transition: all .15s;
+    transition: all .2s cubic-bezier(0.16, 1, 0.3, 1);
     border: none;
-    background: none;
+    background: transparent;
     width: 100%;
     text-align: left;
     -webkit-tap-highlight-color: transparent;
@@ -291,39 +314,109 @@ body {
 
 .biz-sidebar-link:hover {
     background: var(--biz-primary-light);
-    color: var(--biz-primary);
+    color: var(--biz-text);
 }
 
 .biz-sidebar-link.active {
-    background: var(--biz-primary-light);
+    background: var(--biz-surface);
     color: var(--biz-primary);
     font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+    border: 1px solid var(--biz-border);
+}
+
+/* Dark mode override for the nice inset shadow effect */
+[data-theme="dark"] .biz-sidebar-link.active {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+    border-color: var(--biz-border-strong);
 }
 
 .biz-sidebar-link i {
-    width: 18px;
+    width: 20px;
     text-align: center;
-    font-size: 14px;
+    font-size: 15px;
+    color: var(--biz-text-dim);
+    transition: color .2s;
 }
 
-.biz-sidebar-footer {
-    padding: 12px 8px;
-    border-top: 1px solid var(--biz-border);
+.biz-sidebar-link:hover i {
+    color: var(--biz-text-muted);
+}
+
+.biz-sidebar-link.active i {
+    color: var(--biz-primary);
 }
 
 /* Main content area */
 .biz-main {
-    flex: 1;
-    margin-left: var(--biz-sidebar-w);
-    min-height: 100vh;
+    position: relative;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--biz-bg-2);
+    min-width: 0;
+    /* Fixes grid auto-sizing blowout */
+}
+
+.biz-content-area {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0 auto;
+    padding-bottom: 30px;
+}
+
+/* ── Mobile Layout Specifics ────────────────────────────────────── */
+/* Top Navbar for Mobile */
+.biz-mob-topnav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--biz-surface);
+    border-bottom: 1px solid var(--biz-border);
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 900;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.biz-mob-top-brand {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--biz-text);
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.biz-mob-top-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--biz-radius-sm);
+    background: var(--biz-surface-2);
+    border: 1px solid var(--biz-border);
+    color: var(--biz-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.biz-mob-top-btn:active {
+    background: var(--biz-border);
 }
 
 /* Top Nav Bar (desktop) */
 .biz-topnav {
-    height: 56px;
-    background: var(--biz-bg-2);
+    height: 64px;
+    background: var(--biz-surface);
     border-bottom: 1px solid var(--biz-border);
     display: flex;
     align-items: center;
@@ -340,6 +433,14 @@ body {
     gap: 12px;
 }
 
+.biz-topnav-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 24px;
+}
+
 .biz-topnav-right {
     display: flex;
     align-items: center;
@@ -347,41 +448,75 @@ body {
 }
 
 .biz-page-title {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--biz-text);
+}
+
+.biz-page-subtitle {
+    font-size: 12px;
+    color: var(--biz-text-muted);
+    font-weight: 500;
 }
 
 /* Page padding */
 .biz-page {
     padding: 24px;
-    padding-bottom: calc(var(--biz-nav-h) + 24px);
     max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* AI Panel (Desktop Right) */
+.biz-aipanel {
+    background: var(--biz-surface-2);
+    border-left: 1px solid var(--biz-border);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    z-index: 190;
+    overflow-y: auto;
+}
+
+.biz-aipanel-header {
+    height: 64px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--biz-border);
+}
+
+.biz-aipanel-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--biz-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.biz-aipanel-content {
+    padding: 20px;
 }
 
 /* ── Mobile Bottom Navigation ──────────────────────────────────────── */
+/* Bottom Nav Bar */
 .biz-mob-nav {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: var(--biz-nav-h);
-    background: rgba(10, 14, 26, 0.90);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid var(--biz-border-strong);
-    display: flex;
-    z-index: 500;
+    height: 64px;
+    background: var(--biz-surface);
+    border-top: 1px solid var(--biz-border);
+    display: none;
+    /* Desktop hidden */
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+    /* Reduced from 8px to fit 6 items */
+    z-index: 1000;
     padding-bottom: env(safe-area-inset-bottom);
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
-    transform: translateZ(0);
-    transition: all var(--motion-base) var(--ease-fintech);
-    will-change: transform;
-    contain: layout paint;
-}
-
-[data-theme="light"] .biz-mob-nav {
-    background: rgba(240, 244, 255, 0.98);
-    border-top-color: var(--biz-border-strong);
 }
 
 .biz-nav-btn {
@@ -391,22 +526,29 @@ body {
     align-items: center;
     justify-content: center;
     gap: 4px;
-    background: none;
+    height: 100%;
+    background: transparent;
     border: none;
+    color: var(--biz-text-muted);
     cursor: pointer;
-    color: var(--biz-text-dim);
-    font-size: 9.5px;
-    font-weight: 600;
-    font-family: var(--biz-font);
-    letter-spacing: .3px;
-    transition: color .15s;
-    padding: 8px 2px;
+    font-family: inherit;
+    transition: color .2s;
     -webkit-tap-highlight-color: transparent;
+    padding: 0 2px;
+    /* Allow squeezing */
 }
 
 .biz-nav-btn i {
-    font-size: 17px;
-    transition: transform .2s;
+    font-size: 18px;
+    /* Slightly smaller for 6 items */
+    margin-bottom: 2px;
+}
+
+.biz-nav-btn span {
+    font-size: 9px;
+    /* Smaller font to fit labels */
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .biz-nav-btn.active {
@@ -530,29 +672,48 @@ body {
 }
 
 /* ── Responsive: Mobile vs Desktop ────────────────────────────────── */
+@media (max-width: 1024px) {
+    .biz-shell {
+        grid-template-columns: var(--biz-sidebar-w) 1fr;
+    }
+}
+
 @media (max-width: 768px) {
-    .biz-sidebar {
-        display: none !important;
+    .biz-shell {
+        grid-template-columns: minmax(0, 1fr);
+        height: auto;
+        overflow: visible;
     }
 
-    .biz-main {
-        margin-left: 0;
-    }
-
+    .biz-sidebar,
     .biz-topnav {
         display: none !important;
     }
 
-    .biz-mob-nav {
-        display: flex !important;
+    .biz-mob-topnav {
+        display: flex;
     }
 
-    body {
-        padding-bottom: var(--biz-nav-h);
+    .biz-mob-nav {
+        display: flex;
+    }
+
+    .biz-main {
+        width: 100%;
+        min-width: 0;
+        height: auto;
+        overflow: visible;
+        margin-top: 56px;
+        /* Space for mob topnav */
+        height: calc(100vh - 56px - 64px - env(safe-area-inset-bottom));
     }
 
     .biz-page {
         padding: 16px 14px calc(var(--biz-nav-h) + 16px);
+    }
+
+    .biz-hidden-mobile {
+        display: none !important;
     }
 }
 
@@ -570,13 +731,139 @@ body {
     }
 }
 
+/* ── Command Palette (Premium Interaction) ──────────────────────────── */
+/* Floating Command Palette adjusting */
+.biz-cmd-trigger {
+    background: var(--biz-bg-2);
+    border: 1px solid var(--biz-border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--biz-text-muted);
+    font-size: 13px;
+    cursor: text;
+    width: 280px;
+    transition: all .2s;
+}
+
+.biz-cmd-trigger:hover {
+    border-color: var(--biz-text-dim);
+    color: var(--biz-text);
+}
+
+.biz-cmd-trigger kbd {
+    margin-left: auto;
+    background: var(--biz-surface);
+    border: 1px solid var(--biz-border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.biz-cmd-palette {
+    background: var(--biz-surface);
+    width: 100%;
+    max-width: 600px;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    margin-top: 8vh;
+    animation: bizSpringIn 300ms var(--ease-spring);
+    border: 1px solid var(--biz-border-strong);
+}
+
+.biz-cmd-header {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--biz-border);
+    padding: 0 16px;
+    gap: 12px;
+}
+
+.biz-cmd-header i {
+    color: var(--biz-text-dim);
+    font-size: 16px;
+}
+
+#biz-cmd-input {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 20px 0;
+    font-size: 16px;
+    color: var(--biz-text);
+    outline: none;
+}
+
+.biz-cmd-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--biz-text-muted);
+}
+
+.biz-cmd-close kbd {
+    background: var(--biz-bg-2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    border: 1px solid var(--biz-border);
+}
+
+.biz-cmd-body {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.biz-cmd-group-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--biz-text-muted);
+    padding: 8px 12px;
+    text-transform: uppercase;
+}
+
+.biz-cmd-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .1s;
+    color: var(--biz-text);
+}
+
+.biz-cmd-item:hover,
+.biz-cmd-item.active {
+    background: var(--biz-primary-light);
+    color: var(--biz-primary);
+}
+
+.biz-cmd-item i {
+    font-size: 14px;
+    width: 20px;
+    text-align: center;
+    color: var(--biz-text-dim);
+}
+
+.biz-cmd-item:hover i,
+.biz-cmd-item.active i {
+    color: var(--biz-primary);
+}
+
 /* ── Cards ──────────────────────────────────────────────────────────── */
 .biz-card {
     background: var(--biz-surface);
-    border: none;
+    border: 1px solid var(--biz-border);
     border-radius: var(--biz-radius);
     padding: 20px;
-    box-shadow: var(--biz-shadow);
+    box-shadow: var(--biz-shadow-sm);
     contain: content;
     transition: all var(--motion-base) var(--ease-fintech);
 }
@@ -619,6 +906,12 @@ body {
     background: none;
     border: none;
     padding: 0;
+    transition: transform 0.1s;
+}
+
+.biz-card-action:hover {
+    transform: translateX(4px);
+    color: var(--biz-info);
 }
 
 /* ── Buttons ────────────────────────────────────────────────────────── */

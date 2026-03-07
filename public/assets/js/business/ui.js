@@ -105,7 +105,19 @@ async function bizSwitchTab(name, fromBtn) {
     // Show loading skeleton
     const container = document.getElementById('biz-app-container');
     if (container) {
-        container.innerHTML = '<div class="biz-loading"><i class="fas fa-spinner fa-spin"></i> Memuat...</div>';
+        const tpl = document.getElementById('tpl-skeleton-kpi');
+        if (tpl) {
+            container.innerHTML = `
+            <div class="biz-page">
+                <div style="display:grid; grid-template-columns: repeat(12, minmax(0,1fr)); gap:16px;">
+                    <div style="grid-column: span 12; display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px;">
+                        ${tpl.innerHTML}${tpl.innerHTML}${tpl.innerHTML}${tpl.innerHTML}
+                    </div>
+                </div>
+            </div>`;
+        } else {
+            container.innerHTML = '<div class="biz-loading"><i class="fas fa-spinner fa-spin"></i> Memuat...</div>';
+        }
     }
 
     bizState.activeTab = name;
@@ -145,6 +157,56 @@ document.addEventListener('click', e => {
         document.querySelector('.biz-fab-main')?.classList.remove('active');
     }
 }, { passive: true });
+
+// ── Command Palette (CTRL+K) ──────────────────────────────────────────────────
+function bizOpenCommandPalette() {
+    bizOpenModal('biz-modal-cmd');
+    setTimeout(() => {
+        const input = document.getElementById('biz-cmd-input');
+        if (input) {
+            input.value = '';
+            input.focus();
+            bizSearchCommand('');
+        }
+    }, 50);
+}
+window.bizOpenCommandPalette = bizOpenCommandPalette;
+
+function bizSearchCommand(q) {
+    const list = document.getElementById('biz-cmd-results');
+    if (!list) return;
+    q = q.toLowerCase().trim();
+
+    // Core actions + basic navigation
+    let html = `
+        <div class="biz-cmd-group-title">Actions</div>
+        <div class="biz-cmd-item" onclick="bizCloseModal('biz-modal-cmd');bizOpenModal('biz-modal-quick-sale')"><i class="fas fa-bolt" style="color:var(--biz-warning)"></i> Quick Sale</div>
+        <div class="biz-cmd-item" onclick="bizCloseModal('biz-modal-cmd');bizOpenModal('biz-modal-product')"><i class="fas fa-box" style="color:var(--biz-primary)"></i> Tambah Produk</div>
+        <div class="biz-cmd-item" onclick="bizCloseModal('biz-modal-cmd');bizOpenModal('biz-modal-expense')"><i class="fas fa-arrow-trend-down" style="color:var(--biz-danger)"></i> Catat Biaya</div>
+        <div class="biz-cmd-group-title">Navigation</div>
+        <div class="biz-cmd-item" onclick="bizCloseModal('biz-modal-cmd');bizSwitchTab('dashboard')"><i class="fas fa-house"></i> Dashboard</div>
+        <div class="biz-cmd-item" onclick="bizCloseModal('biz-modal-cmd');bizSwitchTab('sales')"><i class="fas fa-receipt"></i> Penjualan</div>
+        <div class="biz-cmd-item" onclick="bizCloseModal('biz-modal-cmd');bizSwitchTab('products')"><i class="fas fa-box"></i> Produk</div>
+    `;
+    list.innerHTML = html;
+}
+window.bizSearchCommand = bizSearchCommand;
+
+// Listen for search input in command palette
+document.addEventListener('input', e => {
+    if (e.target.id === 'biz-cmd-input') {
+        bizSearchCommand(e.target.value);
+    }
+});
+
+// Global Keyboard Shortcuts
+document.addEventListener('keydown', (e) => {
+    // CTRL+K or CMD+K opens command palette
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        bizOpenCommandPalette();
+    }
+});
 
 // ── Back Button Intercept ─────────────────────────────────────────────────────
 window.addEventListener('load', () => { history.pushState(null, '', location.href); });

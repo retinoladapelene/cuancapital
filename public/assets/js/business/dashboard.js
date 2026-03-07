@@ -9,90 +9,14 @@ async function bizLoadDashboard() {
 
     const bizId = window.bizState.businessId;
 
-    // Phase 13 Global Command Structure (Mobile-First 12-Column Grid)
-    container.innerHTML = `
-    <div class="biz-page" id="biz-dash-page">
-        <!-- Dashboard Header -->
-        <div class="biz-section-header" style="margin-bottom:16px; border-bottom:1px solid var(--biz-border); padding-bottom:12px; display:flex; justify-content:space-between; align-items:center">
-            <div>
-                <h2 class="biz-page-title" style="font-size:22px;letter-spacing:-0.5px">Business Command</h2>
-                <div style="font-size:13px;color:var(--biz-text-muted);font-weight:600" id="dash-date">${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
-            </div>
-            <div class="biz-quick-actions" style="display:flex; gap:8px;">
-                <button class="biz-btn biz-btn-primary" style="padding:6px 12px; font-size:12px" onclick="bizOpenModal('biz-modal-quick-sale')"><i class="fas fa-plus"></i> Sale</button>
-            </div>
-        </div>
-
-        <!-- 12-Column Main Grid Wrapper -->
-        <div style="display:grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap:16px;">
-            
-            <!-- ZONE 1: Strategic Business Pulse (KPI Cards) -->
-            <!-- Mobile: span 12 (1 col within), Tablet: span 12 (2 col within), Desktop: spans 3 per card manually or flex -->
-            <div style="grid-column: span 12; display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap:12px;" id="dash-zone1-kpi">
-                ${_dashKpiSkeleton()}
-            </div>
-
-            <!-- ZONE 2 & 3 CONTAINER: Radar + Pulse -->
-            <div style="grid-column: span 12; display:grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap:16px;" class="dash-mid-grid">
-                
-                <!-- ZONE 3: Profit Radar (Signature Feature) -->
-                <!-- Desktop: 5 cols. Tablet/Mobile: 12 cols -->
-                <div class="dash-radar-col" style="grid-column: span 12;">
-                    <div class="biz-card" style="height:100%; border-top: 3px solid var(--biz-primary)">
-                        <div class="biz-card-header" style="padding-bottom:0">
-                            <div class="biz-card-title"><i class="fas fa-satellite-dish" style="color:var(--biz-primary)"></i> Profit Radar</div>
-                            <div id="dash-radar-score" style="font-size:12px; font-weight:700; background:var(--biz-surface-2); padding:2px 8px; border-radius:12px">—</div>
-                        </div>
-                        <div style="padding:16px; display:flex; justify-content:center; align-items:center; min-height:220px;">
-                            <canvas id="dashRadarChart" style="max-height:240px; width:100%"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ZONE 4 & 2: AI CFO Insight + Live Pulse -->
-                <!-- Desktop: 7 cols. Tablet/Mobile: 12 cols -->
-                <div class="dash-ai-col" style="grid-column: span 12; display:flex; flex-direction:column; gap:16px;">
-                    
-                    <!-- ZONE 2: Live Business Pulse -->
-                    <div class="biz-card" style="background:var(--biz-surface-2)">
-                        <div style="padding:12px 16px; display:flex; justify-content:space-between; align-items:center">
-                            <div style="display:flex; align-items:center; gap:8px">
-                                <div style="width:8px; height:8px; border-radius:50%; background:var(--biz-danger); box-shadow:0 0 8px var(--biz-danger); animation:pulse 1.5s infinite"></div>
-                                <div style="font-size:12px; font-weight:700; color:var(--biz-text-dim); text-transform:uppercase">Live: Last 60 Mins</div>
-                            </div>
-                            <div id="dash-zone2-live" style="display:flex; gap:16px; font-weight:700; font-size:14px">
-                                <div><i class="fas fa-shopping-bag" style="color:var(--biz-text-muted)"></i> <span id="dash-live-qty">-</span></div>
-                                <div><i class="fas fa-sack-dollar" style="color:var(--biz-success)"></i> <span id="dash-live-rev">-</span></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ZONE 4: AI CFO Panel -->
-                    <div class="biz-card" style="flex:1; border:1px solid var(--biz-border-strong); border-bottom:3px solid var(--biz-success)">
-                        <div class="biz-card-header" style="margin-bottom:8px">
-                            <div class="biz-card-title"><i class="fas fa-robot" style="color:var(--biz-success)"></i> AI CFO Insights</div>
-                        </div>
-                        <div id="dash-zone4-insights" style="display:flex; flex-direction:column; gap:8px; padding:0 16px 16px 16px;">
-                            <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i> Analyzing Business Health...</div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- ZONE 5: Historical Trends (Bottom) -->
-            <div style="grid-column: span 12; margin-top:8px;">
-                <div class="biz-card">
-                    <div class="biz-card-header">
-                        <div class="biz-card-title">Penjualan Terbaru</div>
-                        <button class="biz-card-action" onclick="bizSwitchTab('sales')">Semua →</button>
-                    </div>
-                    <div id="dash-recent-sales"><div class="biz-loading"><i class="fas fa-spinner fa-spin"></i></div></div>
-                </div>
-            </div>
-            
-        </div>
-    </div>`;
+    // Phase 13 Global Command Structure using Template Cloning
+    const tpl = document.getElementById('tpl-dashboard-shell');
+    if (tpl) {
+        container.innerHTML = tpl.innerHTML;
+    } else {
+        container.innerHTML = '<div class="biz-empty">Template Dashboard tidak ditemukan.</div>';
+        return;
+    }
 
     // Simple inline style to handle desktop breakpoints without muddying business-core.css
     if (!document.getElementById('dash-grid-styles')) {

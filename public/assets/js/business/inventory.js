@@ -44,7 +44,7 @@ async function bizLoadInventory() {
         <div class="biz-card" style="margin-bottom:24px;overflow:hidden">
             <div class="biz-card-header" style="padding:16px;background:var(--biz-surface-2);border-bottom:1px solid var(--biz-border);display:flex;justify-content:space-between;align-items:center">
                 <div class="biz-card-title"><i class="fas fa-database" style="color:var(--biz-primary)"></i> Product Database</div>
-                <button class="biz-btn biz-btn-primary biz-btn-sm" onclick="bizOpenProductModal()"><i class="fas fa-plus"></i> Produk</button>
+                <button class="biz-btn biz-btn-primary biz-btn-sm" onclick="bizOpenAddProduct()"><i class="fas fa-plus"></i> Produk</button>
             </div>
             <div style="padding:12px 16px;border-bottom:1px solid var(--biz-border)">
                 <div class="biz-search-bar" style="margin:0">

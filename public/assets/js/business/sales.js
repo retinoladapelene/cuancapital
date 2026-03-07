@@ -449,9 +449,9 @@ function _salesRenderCharts() {
         </div>
         <div class="biz-card">
             <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-warning)"></i> Revenue Composition</div></div>
-            <div style="display:flex;padding:10px;height:260px">
-                <div style="flex:1;position:relative"><div style="text-align:center;font-size:11px;font-weight:700;color:var(--biz-text-dim)">KATEGORI</div><canvas id="salesCatChart"></canvas></div>
-                <div style="flex:1;position:relative"><div style="text-align:center;font-size:11px;font-weight:700;color:var(--biz-text-dim)">CHANNEL</div><canvas id="salesChanChart"></canvas></div>
+            <div style="display:flex;flex-wrap:wrap;padding:10px;height:auto;min-height:260px;gap:20px;align-items:center;">
+                <div style="flex:1;min-width:140px;position:relative;height:240px"><div style="text-align:center;font-size:11px;font-weight:700;color:var(--biz-text-dim)">KATEGORI</div><canvas id="salesCatChart"></canvas></div>
+                <div style="flex:1;min-width:140px;position:relative;height:240px"><div style="text-align:center;font-size:11px;font-weight:700;color:var(--biz-text-dim)">CHANNEL</div><canvas id="salesChanChart"></canvas></div>
             </div>
         </div>
     </div>
