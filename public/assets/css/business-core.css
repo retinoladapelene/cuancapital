@@ -1124,25 +1124,7 @@ textarea.biz-input {
     transform: translateY(0) scale(1);
 }
 
-/* Mobile: bottom sheet */
-@media (max-width: 480px) {
-    .biz-modal-bg {
-        align-items: flex-end;
-        padding: 0;
-    }
 
-    .biz-modal {
-        border-radius: var(--biz-radius-lg) var(--biz-radius-lg) 0 0;
-        max-width: 100%;
-        transform: translateY(40px);
-        padding-bottom: calc(24px + env(safe-area-inset-bottom));
-        max-height: 88vh;
-    }
-
-    .biz-modal-bg.open .biz-modal {
-        transform: translateY(0);
-    }
-}
 
 .biz-modal-header {
     display: flex;
@@ -1174,22 +1156,7 @@ textarea.biz-input {
     color: var(--biz-danger);
 }
 
-/* Drag handle (mobile bottom sheet) */
-.biz-modal::before {
-    content: '';
-    display: block;
-    width: 36px;
-    height: 4px;
-    background: var(--biz-border-strong);
-    border-radius: 100px;
-    margin: 0 auto 16px;
-}
 
-@media (min-width: 481px) {
-    .biz-modal::before {
-        display: none;
-    }
-}
 
 /* Modal Sticky Footer (Floating Buttons) */
 .biz-modal-footer {
@@ -1203,14 +1170,7 @@ textarea.biz-input {
     z-index: 10;
 }
 
-@media (max-width: 480px) {
-    .biz-modal-footer {
-        bottom: calc(-24px - env(safe-area-inset-bottom));
-        margin-bottom: calc(-24px - env(safe-area-inset-bottom));
-        padding-bottom: calc(16px + env(safe-area-inset-bottom));
-        border-radius: 0;
-    }
-}
+
 
 /* ── Utility ─────────────────────────────────────────────────────────── */
 .biz-divider {

@@ -107,7 +107,7 @@ function _invRenderLayer1() {
         </div>
 
         <!-- 6 Micro KPIs -->
-        <div style="flex:2;min-width:min(100%, 300px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%, 120px),1fr));gap:12px">
+        <div style="flex:2;min-width:min(100%, 300px);display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">TOTAL PRODUK</div><div style="font-size:20px;font-weight:800;margin-top:4px">${totalItems}</div></div>
             <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">TOTAL UNIT</div><div style="font-size:20px;font-weight:800;margin-top:4px">${totalQty.toLocaleString('id-ID')}</div></div>
             <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">NILAI STOK</div><div style="font-size:18px;font-weight:800;color:var(--biz-primary);margin-top:4px">${bizRp(totalValue)}</div></div>
@@ -284,10 +284,11 @@ function invRenderChunk(startIdx, query) {
     // Generate HTML for chunk
     const html = chunk.map(p => {
         let badgeCol = p.masterStatus === 'FAST' ? 'background:var(--biz-success-bg);color:var(--biz-success)' :
-            p.masterStatus === 'OUT' || p.masterStatus === 'LOW' || p.masterStatus === 'DEAD' || p.masterStatus === 'EXPIRING' ? 'background:var(--biz-danger-bg);color:var(--biz-danger)' :
-                p.masterStatus === 'SLOW' ? 'background:var(--biz-warning-bg);color:var(--biz-warning)' :
-                    p.masterStatus === 'OVER' ? 'background:#e0e7ff;color:#4f46e5' :
-                        'background:var(--biz-surface-2);color:var(--biz-text-dim)';
+            p.masterStatus === 'NEW' ? 'background:var(--biz-info-bg);color:var(--biz-info)' :
+                p.masterStatus === 'OUT' || p.masterStatus === 'LOW' || p.masterStatus === 'DEAD' || p.masterStatus === 'EXPIRING' ? 'background:var(--biz-danger-bg);color:var(--biz-danger)' :
+                    p.masterStatus === 'SLOW' ? 'background:var(--biz-warning-bg);color:var(--biz-warning)' :
+                        p.masterStatus === 'OVER' ? 'background:#e0e7ff;color:#4f46e5' :
+                            'background:var(--biz-surface-2);color:var(--biz-text-dim)';
 
         let dateTx = p.lastSold ? new Date(p.lastSold).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' }) : 'N/A';
         let actCol = p.stock <= 0 ? 'var(--biz-danger)' : 'var(--biz-primary)';

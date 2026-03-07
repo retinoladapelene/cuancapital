@@ -157,10 +157,12 @@ async function repRenderAIAndLayer1() {
     // AI Insight Engine (Top Banner)
     let aiHtml = '';
     const insights = [];
-    if (curRev > prevRev * 1.05) insights.push({ t: 'success', msg: `Revenue naik ${((curRev - prevRev) / prevRev * 100).toFixed(0)}% dibanding periode sebelumnya.` });
+    const revGrowth = prevRev > 0 ? ((curRev - prevRev) / prevRev * 100).toFixed(0) : '100';
+    if (curRev > prevRev * 1.05) insights.push({ t: 'success', msg: `Revenue naik ${revGrowth}% dibanding periode sebelumnya.` });
     else if (curRev < prevRev * 0.95 && prevRev > 0) insights.push({ t: 'danger', msg: `Revenue turun ${((prevRev - curRev) / prevRev * 100).toFixed(0)}% dibanding periode lalu.` });
 
-    if (curExpSum > prevExpSum * 1.1) insights.push({ t: 'warning', msg: `Biaya pengeluaran melonjak ${((curExpSum - prevExpSum) / prevExpSum * 100).toFixed(0)}%.` });
+    const expGrowth = prevExpSum > 0 ? ((curExpSum - prevExpSum) / prevExpSum * 100).toFixed(0) : '100';
+    if (curExpSum > prevExpSum * 1.1) insights.push({ t: 'warning', msg: `Biaya pengeluaran melonjak ${expGrowth}%.` });
 
     if (insights.length > 0) {
         aiHtml = `<div class="biz-card" style="margin-bottom:20px;border:1px solid var(--biz-border-strong);border-left:4px solid var(--biz-primary)">
@@ -274,82 +276,151 @@ function repRenderSpecificLayer(layerId, container) {
     else if (layerId === '6') _repRenderCashflowLayer(container);
 }
 
-// Layer 2: Sales
+// Layer 2: Sales Intelligence
 function _repRenderSalesLayer(container) {
-    container.innerHTML = `<div class="biz-card">
-        <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-line" style="color:var(--biz-primary)"></i> Sales Trend</div></div>
-        <div style="height:220px;width:100%;position:relative"><canvas id="repSalesTrendChart"></canvas></div>
-    </div>`;
+    const { bizId, snapshots, sales, saleItems } = window._repData;
+    const { start, end, diffDays } = repGetDateRange();
 
-    const { bizId, snapshots } = window._repData;
-    const { end, diffDays } = repGetDateRange();
-
+    // Reconstruct data
     const days = [];
     for (let i = diffDays; i >= 0; i--) {
-        const d = new Date(end);
-        d.setDate(d.getDate() - i);
+        const d = new Date(end); d.setDate(d.getDate() - i);
         days.push(d.toISOString().split('T')[0]);
     }
-
-    const revenues = days.map(d => {
+    const revenues = [];
+    const volumes = [];
+    days.forEach(d => {
         const snap = snapshots.find(s => s.snapshot_date === d && s.business_id === bizId);
-        return snap ? (snap.revenue || 0) : 0;
+        revenues.push(snap ? (snap.revenue || 0) : 0);
+        volumes.push(snap ? (snap.orders_count || 0) : 0);
+    });
+    const lbls = days.map(d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
+
+    // Categ & Channel Aggregation
+    const curSales = _repFilterByBizAndDate(sales, bizId, start, end, 'created_at');
+    const chanMap = {};
+    curSales.forEach(s => { chanMap[s.payment_method] = (chanMap[s.payment_method] || 0) + s.total_amount; });
+
+    const curSaleIds = new Set(curSales.filter(s => s.status !== 'cancelled').map(s => s.id));
+    const curItems = saleItems.filter(si => curSaleIds.has(si.sale_id));
+
+    // Build product ID → category map from product cache
+    const prodCatMap = {};
+    (window.bizState.productCache || []).forEach(p => { prodCatMap[p.id] = p.category || 'Lainnya'; });
+
+    const catMap = {};
+    curItems.forEach(i => {
+        const cat = prodCatMap[i.product_id] || 'Lainnya';
+        catMap[cat] = (catMap[cat] || 0) + (i.subtotal || i.subtotal_price || (i.price * i.quantity) || 0);
     });
 
-    const lbls = days.map(d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
+    container.innerHTML = `
+    <!-- Tren & Komposisi -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap:20px; margin-bottom:24px;">
+        <div class="biz-card">
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-chart-line" style="color:var(--biz-primary)"></i> Revenue Trend (${window.bizState.analyticsRange.toUpperCase()})</div>
+            </div>
+            <div style="height:260px;position:relative;padding:10px"><canvas id="repSalesTrendChart"></canvas></div>
+        </div>
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-warning)"></i> Revenue Composition</div></div>
+            <div style="display:flex;flex-wrap:wrap;padding:10px;height:auto;min-height:260px;gap:20px;align-items:center;">
+                <div style="flex:1;min-width:140px;position:relative;height:240px"><div style="text-align:center;font-size:11px;font-weight:700;color:var(--biz-text-dim)">KATEGORI</div><canvas id="repSalesCatChart"></canvas></div>
+                <div style="flex:1;min-width:140px;position:relative;height:240px"><div style="text-align:center;font-size:11px;font-weight:700;color:var(--biz-text-dim)">CHANNEL</div><canvas id="repSalesChanChart"></canvas></div>
+            </div>
+        </div>
+    </div>`;
 
     if (window.bizRepSalesChartInst) window.bizRepSalesChartInst.destroy();
     window.bizRepSalesChartInst = new Chart(document.getElementById('repSalesTrendChart'), {
         type: 'line',
-        data: { labels: lbls, datasets: [{ label: 'Revenue', data: revenues, borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.4 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+        data: {
+            labels: lbls, datasets: [
+                { label: 'Revenue', data: revenues, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', yAxisID: 'y', tension: 0.3, fill: true },
+                { label: 'Units Sold', data: volumes, borderColor: '#3b82f6', borderDash: [5, 5], yAxisID: 'y1', tension: 0.3 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { x: { grid: { display: false } }, y: { type: 'linear', display: true, position: 'left' }, y1: { type: 'linear', display: true, position: 'right', grid: { display: false } } }, plugins: { legend: { position: 'top' } } }
+    });
+
+    const cColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+    if (window.bizRepCatChartInst) window.bizRepCatChartInst.destroy();
+    window.bizRepCatChartInst = new Chart(document.getElementById('repSalesCatChart'), {
+        type: 'doughnut', data: { labels: Object.keys(catMap), datasets: [{ data: Object.values(catMap), backgroundColor: cColors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
+    });
+
+    if (window.bizRepChanChartInst) window.bizRepChanChartInst.destroy();
+    window.bizRepChanChartInst = new Chart(document.getElementById('repSalesChanChart'), {
+        type: 'doughnut', data: { labels: Object.keys(chanMap), datasets: [{ data: Object.values(chanMap), backgroundColor: ['#8b5cf6', '#ec4899', '#f59e0b', '#3b82f6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
     });
 }
 
-// Layer 3: Profit
+// Layer 3: Profit & Products Intelligence
 function _repRenderProfitLayer(container) {
     const { bizId, expenses, profitData } = window._repData;
     const { start, end } = repGetDateRange();
     const curExp = _repFilterByBizAndDate(expenses, bizId, start, end, 'expense_date');
 
-    let prodHtml = '<div class="biz-empty">Tidak ada data profit produk bulan ini.</div>';
-    if (profitData && profitData.products && profitData.products.length) {
-        const top3 = profitData.products.slice(0, 3);
-        prodHtml = top3.map((p, i) => `
-            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--biz-border);padding:8px 0;align-items:center">
-                <div style="font-size:13px;font-weight:600">${i + 1}. ${_esc(p.name)}</div>
-                <div style="font-size:13px;font-weight:700;color:var(--biz-success)">${p.margin.toFixed(0)}%</div>
-            </div>
-        `).join('');
+    const topRevNames = []; const topRevData = [];
+    const topProfNames = []; const topProfData = [];
+    if (profitData && profitData.products) {
+        const byRev = [...profitData.products].sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+        byRev.forEach(p => { topRevNames.push(p.name.length > 12 ? p.name.substring(0, 10) + '...' : p.name); topRevData.push(p.revenue); });
+
+        const byProf = [...profitData.products].sort((a, b) => b.profit - a.profit).slice(0, 10);
+        byProf.forEach(p => { topProfNames.push(p.name.length > 12 ? p.name.substring(0, 10) + '...' : p.name); topProfData.push(p.profit); });
     }
 
-    container.innerHTML = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap:20px;">
+    container.innerHTML = `
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap:20px; margin-bottom:20px">
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-money-bill-wave" style="color:var(--biz-success)"></i> Top 10 Revenue</div></div>
+            <div style="height:220px;position:relative;padding:10px"><canvas id="repTopRevChart"></canvas></div>
+        </div>
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-hand-holding-dollar" style="color:var(--biz-primary)"></i> Top 10 Profit</div></div>
+            <div style="height:220px;position:relative;padding:10px"><canvas id="repTopProfChart"></canvas></div>
+        </div>
+    </div>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap:20px;">
         <div class="biz-card">
             <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-danger)"></i> Operational Breakdown</div></div>
-            <div style="height:180px;position:relative"><canvas id="repExpDonutChart"></canvas></div>
+            <div style="height:180px;position:relative;padding:10px"><canvas id="repExpDonutChart"></canvas></div>
         </div>
         <div class="biz-card">
-            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-trophy" style="color:#f59e0b"></i> Margin Terbaik</div></div>
-            <div style="margin-top:12px">${prodHtml}</div>
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-tags" style="color:var(--biz-purple)"></i> Margin Distribution</div>
+            </div>
+            <div style="height:180px;position:relative;padding:10px"><canvas id="repMarginDistChart"></canvas></div>
         </div>
     </div>`;
-
-    const canvas = document.getElementById('repExpDonutChart');
-    if (!canvas) return;
     const catMap = {};
-    curExp.forEach(e => catMap[e.category] = (catMap[e.category] || 0) + e.amount);
+    curExp.forEach(e => {
+        const cat = e.category_name || 'Lainnya';
+        catMap[cat] = (catMap[cat] || 0) + e.amount;
+    });
     const topCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
+
+    if (window.bizRepTopRevInst) window.bizRepTopRevInst.destroy();
+    window.bizRepTopRevInst = new Chart(document.getElementById('repTopRevChart'), { type: 'bar', data: { labels: topRevNames, datasets: [{ label: 'Revenue', data: topRevData, backgroundColor: '#10b981', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, indexAxis: 'y', scales: { x: { display: false } } } });
+
+    if (window.bizRepTopProfInst) window.bizRepTopProfInst.destroy();
+    window.bizRepTopProfInst = new Chart(document.getElementById('repTopProfChart'), { type: 'bar', data: { labels: topProfNames, datasets: [{ label: 'Profit', data: topProfData, backgroundColor: '#3b82f6', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, indexAxis: 'y', scales: { x: { display: false } } } });
 
     if (window.bizRepDonutChartInst) window.bizRepDonutChartInst.destroy();
     if (topCats.length > 0) {
-        window.bizRepDonutChartInst = new Chart(canvas, {
-            type: 'doughnut',
-            data: { labels: topCats.map(c => c[0]), datasets: [{ data: topCats.map(c => c[1]), backgroundColor: ['#f43f5e', '#f59e0b', '#8b5cf6', '#3b82f6'], borderWidth: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+        window.bizRepDonutChartInst = new Chart(document.getElementById('repExpDonutChart'), {
+            type: 'doughnut', data: { labels: topCats.map(c => c[0]), datasets: [{ data: topCats.map(c => c[1]), backgroundColor: ['#f43f5e', '#f59e0b', '#8b5cf6', '#3b82f6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
         });
-    } else {
-        canvas.parentElement.innerHTML = '<div class="biz-empty">Tidak ada beban.</div>';
     }
+
+    if (window.bizRepMarginChartInst) window.bizRepMarginChartInst.destroy();
+    let mU = 0, mT = 0, mTw = 0, mO = 0;
+    if (profitData && profitData.products) {
+        profitData.products.forEach(p => { if (p.margin < 10) mU++; else if (p.margin < 20) mT++; else if (p.margin < 30) mTw++; else mO++; });
+    }
+    window.bizRepMarginChartInst = new Chart(document.getElementById('repMarginDistChart'), { type: 'doughnut', data: { labels: ['<10%', '10-20%', '20-30%', '>30%'], datasets: [{ data: [mU, mT, mTw, mO], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: "'Inter',sans-serif", size: 11 } } } } } });
 }
 
 // Layer 4: Customers
@@ -365,20 +436,43 @@ function _repRenderCustomerLayer(container) {
         else t++;
     });
 
-    container.innerHTML = `<div class="biz-card">
-        <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-users" style="color:var(--biz-primary)"></i> Customer Intelligence</div></div>
-        <div style="display:flex;gap:12px;margin-top:12px;">
-            <div style="flex:1;background:var(--biz-surface-2);border-radius:12px;padding:12px;text-align:center">
-                <div style="font-size:11px;font-weight:700;color:var(--biz-text-dim)">CASH</div><div style="font-size:20px;font-weight:800">${c} Trx</div>
-            </div>
-            <div style="flex:1;background:var(--biz-surface-2);border-radius:12px;padding:12px;text-align:center">
-                <div style="font-size:11px;font-weight:700;color:var(--biz-text-dim)">QRIS</div><div style="font-size:20px;font-weight:800;color:var(--biz-primary)">${q} Trx</div>
-            </div>
-            <div style="flex:1;background:var(--biz-surface-2);border-radius:12px;padding:12px;text-align:center">
-                <div style="font-size:11px;font-weight:700;color:var(--biz-text-dim)">TRANSFER</div><div style="font-size:20px;font-weight:800;color:var(--biz-success)">${t} Trx</div>
+    container.innerHTML = `
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap:20px;">
+        <div class="biz-card">
+            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-users" style="color:var(--biz-primary)"></i> Customer Intelligence</div></div>
+            <div style="display:flex;gap:8px;margin-top:12px;padding:0 10px 10px 10px;flex-wrap:wrap">
+                <div style="flex:1;min-width:90px;background:var(--biz-surface-2);border-radius:12px;padding:10px;text-align:center">
+                    <div style="font-size:10px;font-weight:800;color:var(--biz-text-dim);margin-bottom:4px">CASH</div>
+                    <div style="font-size:20px;font-weight:800">${c} <span style="font-size:11px;font-weight:700;color:var(--biz-text-dim)">Transaksi</span></div>
+                </div>
+                <div style="flex:1;min-width:90px;background:var(--biz-surface-2);border-radius:12px;padding:10px;text-align:center">
+                    <div style="font-size:10px;font-weight:800;color:var(--biz-text-dim);margin-bottom:4px">QRIS</div>
+                    <div style="font-size:20px;font-weight:800;color:var(--biz-primary)">${q} <span style="font-size:11px;font-weight:700;color:var(--biz-text-dim)">Transaksi</span></div>
+                </div>
+                <div style="flex:1;min-width:90px;background:var(--biz-surface-2);border-radius:12px;padding:10px;text-align:center">
+                    <div style="font-size:10px;font-weight:800;color:var(--biz-text-dim);margin-bottom:4px">TRANSFER</div>
+                    <div style="font-size:20px;font-weight:800;color:var(--biz-success)">${t} <span style="font-size:11px;font-weight:700;color:var(--biz-text-dim)">Transaksi</span></div>
+                </div>
             </div>
         </div>
+        <div class="biz-card">
+            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="biz-card-title"><i class="fas fa-heart" style="color:var(--biz-danger)"></i> Customer Loyalty Frequency</div>
+            </div>
+            <div style="height:120px;position:relative;padding:10px"><canvas id="repLoyaltyChart"></canvas></div>
+        </div>
     </div>`;
+
+    // Calculate customer frequency
+    const custMap = {}; curSales.forEach(s => { if (s.customer_name && s.customer_name !== 'Umum') custMap[s.customer_name] = (custMap[s.customer_name] || 0) + 1; });
+    let freq1 = 0, freq2 = 0, freq3 = 0;
+    Object.values(custMap).forEach(v => { if (v === 1) freq1++; else if (v === 2) freq2++; else freq3++; });
+    if (freq1 === 0 && freq2 === 0 && freq3 === 0) freq1 = c + q + t; // fallback if no names
+
+    if (window.bizRepFreqChartInst) window.bizRepFreqChartInst.destroy();
+    window.bizRepFreqChartInst = new Chart(document.getElementById('repLoyaltyChart'), {
+        type: 'pie', data: { labels: ['1 Order', '2 Orders', '3+ Orders'], datasets: [{ data: [freq1, freq2, freq3], backgroundColor: ['#64748b', '#3b82f6', '#8b5cf6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+    });
 }
 
 // Layer 5: Inventory

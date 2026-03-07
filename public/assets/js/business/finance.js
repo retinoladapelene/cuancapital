@@ -96,59 +96,7 @@ async function bizLoadFinance() {
             <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i> Loading KPIs...</div>
         </div>
 
-        <!-- LAYER 2: Visual Analytics (Charts) -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap:20px; margin-bottom:24px">
-            <!-- Revenue vs Expense Line Chart -->
-            <div class="biz-card" style="flex:2;min-width:320px">
-                <div class="biz-card-header" style="margin-bottom:12px">
-                    <div class="biz-card-title"><i class="fas fa-chart-area" style="color:var(--biz-primary)"></i> Trend Keuangan (14 Hari)</div>
-                </div>
-                <div style="height:220px; width:100%; position:relative">
-                    <canvas id="finMainChart"></canvas>
-                </div>
-                <div id="fin-main-chart-labels" style="margin-top:10px;display:flex;justify-content:center;gap:15px;font-size:12px;color:var(--biz-text-dim)"></div>
-            </div>
 
-            <!-- Cashflow Timeline (Chart + List) -->
-            <div class="biz-card" style="flex:1;min-width:300px">
-                <div class="biz-card-header" style="margin-bottom:12px">
-                    <div class="biz-card-title"><i class="fas fa-water" style="color:var(--biz-primary)"></i> Cashflow Timeline</div>
-                </div>
-                <div style="height:100px; width:100%; position:relative; margin-bottom:12px">
-                    <canvas id="finCashflowChart"></canvas>
-                </div>
-                <div id="fin-cashflow-timeline" style="display:flex;flex-direction:column;gap:12px">
-                    <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- LAYER 3: Smart Insights -->
-        <div id="fin-smart-insights" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap:16px; margin-bottom:24px"></div>
-
-        <!-- LAYER 4: Expense Breakdown & Stock Intelligence -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap:20px; margin-bottom:24px">
-            <!-- Expense Breakdown Donut -->
-            <div class="biz-card">
-                <div class="biz-card-header" style="margin-bottom:12px">
-                    <div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-danger)"></i> Expense Breakdown</div>
-                </div>
-                <div style="height:180px; width:100%; position:relative">
-                    <canvas id="finExpenseDonutChart"></canvas>
-                </div>
-                <div id="fin-expense-donut-labels" style="margin-top:16px;display:flex;flex-direction:column;gap:8px"></div>
-            </div>
-
-            <!-- Stock Intelligence Panel -->
-            <div class="biz-card">
-                <div class="biz-card-header" style="margin-bottom:12px">
-                    <div class="biz-card-title"><i class="fas fa-boxes-packing" style="color:var(--biz-primary)"></i> Stock Intelligence</div>
-                </div>
-                <div id="fin-stock-intel" style="display:flex;flex-direction:column;gap:14px">
-                    <div class="biz-loading"><i class="fas fa-spinner fa-spin"></i></div>
-                </div>
-            </div>
-        </div>
 
         <div id="fin-profit-leak-container"></div>
         
@@ -227,9 +175,6 @@ async function bizLoadFinance() {
     }, 100);
 
     // Render Charts and Intelligence
-    _finRenderMainFinanceChart(snapshots, bizId);
-    _finRenderExpenseDonut(expenses, bizId);
-    _finRenderCashflowTimeline(snapshots, sales, expenses, bizId);
     _finRenderStockIntelligence(bizId);
     _finRenderProfitLeak(bizId, monthKey);
 
@@ -305,7 +250,7 @@ function finRenderExpenses(list) {
                 <div class="biz-expense-cat-icon" style="background:rgba(244,63,94,0.1);color:var(--biz-danger);width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fas fa-receipt"></i></div>
                 <div class="biz-list-body" style="margin-left:12px;flex:1">
                     <div class="biz-list-name" style="font-weight:600;font-size:14px;color:var(--biz-text)">${_esc(e.category_name || 'Lainnya')}</div>
-                    <div class="biz-list-sub" style="font-size:12px;color:var(--biz-text-dim)">${_esc(e.notes) || '—'}</div>
+                    ${e.notes && e.notes.trim() !== '' ? `<div class="biz-list-sub" style="font-size:12px;color:var(--biz-text-dim)">${_esc(e.notes)}</div>` : ''}
                 </div>
                 <div class="biz-list-right" style="text-align:right">
                     <div class="biz-expense-amount" style="font-weight:700;color:var(--biz-danger)">-${bizRp(e.amount)}</div>
@@ -319,201 +264,7 @@ function finRenderExpenses(list) {
 
 // ── Chart Generators ────────────────────────────────────────────────────────
 
-function _finRenderMainFinanceChart(snapshots, bizId) {
-    const canvas = document.getElementById('finMainChart');
-    if (!canvas) return;
 
-    const days = Array.from({ length: 14 }, (_, i) => {
-        const d = new Date(); d.setDate(d.getDate() - (13 - i));
-        return d.toISOString().split('T')[0];
-    });
-
-    const revenues = [];
-    const expenses = [];
-    const profits = [];
-
-    days.forEach(d => {
-        const snap = snapshots.find(s => s.snapshot_date === d && s.business_id === bizId);
-        revenues.push(snap ? (snap.revenue || 0) : 0);
-        expenses.push(snap ? (snap.expenses || 0) : 0);
-        profits.push(snap ? (snap.profit || 0) : 0);
-    });
-
-    const labels = days.map(d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
-
-    if (window.bizFinMainChartInstance) window.bizFinMainChartInstance.destroy();
-
-    const maxVal = Math.max(...revenues, ...expenses);
-    if (maxVal === 0) {
-        canvas.parentElement.innerHTML = '<div class="biz-empty" style="color:var(--biz-text-dim);height:100%;display:flex;align-items:center;justify-content:center"><i class="fas fa-chart-line" style="margin-right:8px"></i> Belum ada data transaksi kas.</div>';
-        return;
-    }
-
-    if (typeof Chart === 'undefined') return;
-
-    window.bizFinMainChartInstance = new Chart(canvas, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Revenue', data: revenues, borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                    borderWidth: 3, pointBackgroundColor: '#fff', pointBorderColor: '#6366f1', pointRadius: 4, fill: true, tension: 0.4
-                },
-                {
-                    label: 'Expense', data: expenses, borderColor: '#ef4444', backgroundColor: 'transparent',
-                    borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: '#fff', pointBorderColor: '#ef4444', pointRadius: 3, fill: false, tension: 0.4
-                }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { family: "'Inter', sans-serif" }, bodyFont: { family: "'Inter', sans-serif", size: 13 },
-                    callbacks: { label: function (ctx) { return ctx.dataset.label + ": Rp " + ctx.raw.toString().replace(/B(?=(d{3})+(?!d))/g, "."); } }
-                }
-            },
-            scales: { x: { grid: { display: false }, ticks: { font: { family: "'Inter', sans-serif", size: 10 } } }, y: { display: false, min: 0 } }
-        }
-    });
-
-    const totRev = revenues.reduce((a, b) => a + b, 0);
-    const totExp = expenses.reduce((a, b) => a + b, 0);
-    const totProf = profits.reduce((a, b) => a + b, 0);
-
-    document.getElementById('fin-main-chart-labels').innerHTML = `
-        <div style="display:flex;gap:6px;align-items:center"><div style="width:10px;height:10px;border-radius:2px;background:#6366f1"></div><span style="font-weight:600">Terima Rp${bizRp(totRev)}</span></div>
-        <div style="display:flex;gap:6px;align-items:center"><div style="width:10px;height:10px;border-radius:2px;border:2px dashed #ef4444"></div><span style="font-weight:600">Keluar Rp${bizRp(totExp)}</span></div>
-        <div style="display:flex;gap:6px;align-items:center;background:var(--biz-surface-2);padding:2px 8px;border-radius:12px"><i class="fas fa-arrow-up" style="color:var(--biz-success);font-size:10px"></i><span style="font-weight:700;color:var(--biz-success)">Profit Rp${bizRp(totProf)}</span></div>
-    `;
-}
-
-function _finRenderExpenseDonut(expenses, bizId) {
-    const canvas = document.getElementById('finExpenseDonutChart');
-    if (!canvas) return;
-
-    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
-    const recentExp = expenses.filter(e => e.business_id === bizId && new Date(e.created_at || Math.max(new Date(e.expense_date), new Date() - 86400000)) >= cutoff);
-
-    if (recentExp.length === 0) {
-        canvas.parentElement.innerHTML = '<div class="biz-empty" style="color:var(--biz-text-dim);height:100%;display:flex;align-items:center;justify-content:center"><i class="fas fa-chart-pie" style="margin-right:8px"></i> Belum ada pengeluaran 30 hari.</div>';
-        return;
-    }
-
-    const catMap = {}; let total = 0;
-    recentExp.forEach(e => { catMap[e.category] = (catMap[e.category] || 0) + e.amount; total += e.amount; });
-
-    const sortedCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
-    const top4 = sortedCats.slice(0, 4);
-    const others = sortedCats.slice(4).reduce((sum, item) => sum + item[1], 0);
-    if (others > 0) top4.push(['Lainnya', others]);
-
-    const labels = top4.map(c => c[0]);
-    const data = top4.map(c => c[1]);
-    const colors = ['#f43f5e', '#f59e0b', '#8b5cf6', '#3b82f6', '#94a3b8'];
-
-    if (window.bizFinExpenseDonutInstance) window.bizFinExpenseDonutInstance.destroy();
-
-    if (typeof Chart === 'undefined') return;
-
-    window.bizFinExpenseDonutInstance = new Chart(canvas, {
-        type: 'doughnut',
-        data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }] },
-        options: {
-            responsive: true, maintainAspectRatio: false, cutout: '70%',
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (ctx) { return " Rp " + ctx.raw.toString().replace(/B(?=(d{3})+(?!d))/g, "."); } } } }
-        }
-    });
-
-    document.getElementById('fin-expense-donut-labels').innerHTML = top4.map((c, i) => {
-        const pct = Math.round((c[1] / total) * 100);
-        return `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--biz-border)">
-            <div style="display:flex;align-items:center;gap:8px">
-                <div style="width:10px;height:10px;border-radius:50%;background:${colors[i]}"></div>
-                <span style="font-size:13px;font-weight:600;color:var(--biz-text)">${_esc(c[0])}</span>
-            </div>
-            <div style="display:flex;align-items:right;gap:8px;font-size:12px;font-weight:600">
-                <span style="color:var(--biz-text-dim)">${pct}%</span>
-                <span style="color:var(--biz-text);width:70px;text-align:right">Rp${bizRp(c[1])}</span>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-function _finRenderCashflowTimeline(snapshots, sales, expenses, bizId) {
-    const canvas = document.getElementById('finCashflowChart');
-    if (!canvas) return;
-
-    const days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(); d.setDate(d.getDate() - (6 - i));
-        return d.toISOString().split('T')[0];
-    });
-
-    const mySales = sales.filter(s => s.business_id === bizId);
-    const myExp = expenses.filter(e => e.business_id === bizId);
-
-    const values = days.map(d => {
-        const dEnd = new Date(d); dEnd.setHours(23, 59, 59, 999);
-        let inTotal = 0; mySales.forEach(s => { if (new Date(s.created_at) <= dEnd) inTotal += s.total_amount; });
-        let outTotal = 0; myExp.forEach(e => { if (new Date(e.created_at || Math.max(new Date(e.expense_date), new Date() - 86400000)) <= dEnd) outTotal += e.amount; });
-        return inTotal - outTotal;
-    });
-
-    const labels = days.map(d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
-
-    if (window.bizFinCashflowChartInstance) window.bizFinCashflowChartInstance.destroy();
-
-    if (typeof Chart === 'undefined') return;
-
-    window.bizFinCashflowChartInstance = new Chart(canvas, {
-        type: 'line',
-        data: { labels: labels, datasets: [{ label: 'Saldo Kas', data: values, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, pointBackgroundColor: '#fff', pointBorderColor: '#10b981', pointRadius: 4, pointHoverRadius: 6, fill: true, tension: 0.4 }] },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { family: "'Inter', sans-serif" }, bodyFont: { family: "'Inter', sans-serif", size: 13 }, callbacks: { label: function (ctx) { return "Rp " + ctx.raw.toString().replace(/B(?=(d{3})+(?!d))/g, "."); } } } },
-            scales: { x: { grid: { display: false }, ticks: { font: { family: "'Inter', sans-serif", size: 10 } } }, y: { display: false } }
-        }
-    });
-
-    const tlContainer = document.getElementById('fin-cashflow-timeline');
-    if (!tlContainer) return;
-
-    const allEvents = [
-        ...mySales.map(s => ({ type: 'sale', amount: s.total_amount, date: new Date(s.created_at), desc: s.payment_method === 'cash' ? 'Penjualan Toko' : 'Penjualan Online' })),
-        ...myExp.map(e => ({ type: 'expense', amount: e.amount, date: new Date(e.created_at || Math.max(new Date(e.expense_date), new Date() - 86400000)), desc: e.notes || e.category }))
-    ];
-
-    allEvents.sort((a, b) => b.date - a.date);
-    const recentEvents = allEvents.slice(0, 5);
-
-    if (recentEvents.length === 0) {
-        tlContainer.innerHTML = `<div class="biz-empty" style="color:var(--biz-text-dim)">Belum ada riwayat transaksi kas.</div>`;
-        return;
-    }
-
-    tlContainer.innerHTML = recentEvents.map(ev => {
-        const isSale = ev.type === 'sale';
-        const iconCol = isSale ? 'var(--biz-success)' : 'var(--biz-danger)';
-        const iconDir = isSale ? 'fa-arrow-up' : 'fa-arrow-down';
-        const sign = isSale ? '+' : '-';
-        return `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
-            <div style="display:flex;align-items:center;gap:12px">
-                <i class="fas ${iconDir}" style="color:${iconCol};font-size:12px;width:12px"></i>
-                <div style="display:flex;flex-direction:column">
-                    <span style="font-weight:700;font-size:14px;color:${iconCol};letter-spacing:-0.2px">${sign}${bizRp(ev.amount)}</span>
-                    <span style="font-size:12px;color:var(--biz-text-dim);margin-top:2px">${_esc(ev.desc)}</span>
-                </div>
-            </div>
-            <div style="font-size:11px;font-weight:600;color:var(--biz-text-muted)">
-                ${ev.date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-            </div>
-        </div>`;
-    }).join('');
-}
 
 async function _finRenderStockIntelligence(bizId) {
     const el = document.getElementById('fin-stock-intel');

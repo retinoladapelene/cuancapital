@@ -56,22 +56,9 @@
             <!-- ZONE 1: Strategic Business Pulse (KPI Cards) -->
             <div style="grid-column: span 12; display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap:12px;" id="dash-zone1-kpi"></div>
 
-            <!-- ZONE 2 & 3 CONTAINER: Radar + Pulse -->
+            <!-- ZONE 2 & 3 CONTAINER: Pulse + Insights -->
             <div style="grid-column: span 12; display:grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap:16px;" class="dash-mid-grid">
                 
-                <!-- ZONE 3: Profit Radar (Signature Feature) -->
-                <div class="dash-radar-col" style="grid-column: span 12;">
-                    <div class="biz-card" style="height:100%; border-top: 3px solid var(--biz-primary)">
-                        <div class="biz-card-header" style="padding-bottom:0">
-                            <div class="biz-card-title"><i class="fas fa-satellite-dish" style="color:var(--biz-primary)"></i> Profit Radar</div>
-                            <div id="dash-radar-score" style="font-size:12px; font-weight:700; background:var(--biz-surface-2); padding:2px 8px; border-radius:12px"></div>
-                        </div>
-                        <div style="padding:16px; display:flex; justify-content:center; align-items:center; min-height:220px;">
-                            <canvas id="dashRadarChart" style="max-height:240px; width:100%"></canvas>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- ZONE 4 & 2: AI CFO Insight + Live Pulse -->
                 <div class="dash-ai-col" style="grid-column: span 12; display:flex; flex-direction:column; gap:16px;">
                     

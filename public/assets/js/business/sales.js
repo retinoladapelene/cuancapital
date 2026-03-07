@@ -17,10 +17,14 @@ function qsOnSearch(val) {
 
     dd.innerHTML = results.map(p => {
         const isOut = p.type === 'physical' && (p.stock || 0) <= 0;
+        let imgTag = p.image_data ? `<div style="width:32px;height:32px;border-radius:6px;background-image:url(${p.image_data});background-size:cover;background-position:center;flex-shrink:0"></div>` : `<div style="width:32px;height:32px;border-radius:6px;background:var(--biz-surface-2);display:flex;align-items:center;justify-content:center;color:var(--biz-text-dim);flex-shrink:0"><i class="fas fa-box"></i></div>`;
         return `<div class="biz-product-option ${isOut ? 'disabled' : ''}" onclick="qsSelectProduct('${p.id}')">
-            <div>
-                <div class="biz-product-option-name">${_esc(p.name)}${isOut ? ' <span style="color:var(--biz-danger)">(Habis)</span>' : ''}</div>
-                <div class="biz-product-option-meta">${p.type === 'physical' ? `Stok: ${p.stock || 0}` : p.type}</div>
+            <div style="display:flex;gap:12px;align-items:center">
+                ${imgTag}
+                <div>
+                    <div class="biz-product-option-name">${_esc(p.name)}${isOut ? ' <span style="color:var(--biz-danger)">(Habis)</span>' : ''}</div>
+                    <div class="biz-product-option-meta">${p.type === 'physical' ? `Stok: ${p.stock || 0}` : p.type}</div>
+                </div>
             </div>
             <div class="biz-product-option-price">${bizRp(p.price_sell)}</div>
         </div>`;
@@ -50,9 +54,10 @@ function qsOnSearch_init() {
     const el = document.getElementById('qs-quick-chips');
     if (!el) return;
     const chips = (window.bizState.quickProducts || window.bizState.productCache.slice(0, 5));
-    el.innerHTML = chips.map(p =>
-        `<span class="biz-quick-product-chip" onclick="qsSelectProduct('${p.id}')">${_esc(p.name)}</span>`
-    ).join('');
+    el.innerHTML = chips.map(p => {
+        let imgTag = p.image_data ? `<div style="width:16px;height:16px;border-radius:4px;background-image:url(${p.image_data});background-size:cover;background-position:center;display:inline-block;vertical-align:middle;margin-right:6px"></div>` : '';
+        return `<span class="biz-quick-product-chip" onclick="qsSelectProduct('${p.id}')">${imgTag}${_esc(p.name)}</span>`;
+    }).join('');
 
     // Check repeat last
     const last = localStorage.getItem('biz_last_sale');
@@ -96,6 +101,7 @@ async function qsSave() {
             businessId: window.bizState.businessId,
             cartItems: [{ product_id: _qsProduct.id, product_name: _qsProduct.name, qty, price: _qsProduct.price_sell, hpp: _qsProduct.hpp || 0 }],
             paymentMethod: _qsPayMethod,
+            customerName: document.getElementById('qs-customer-name')?.value.trim() || '',
         });
         bizToast(`✅ Terjual: ${_qsProduct.name} ×${qty}`, 's');
         bizCloseModal('biz-modal-quick-sale');
@@ -117,6 +123,8 @@ function _qsReset() {
     ids.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     const si = document.getElementById('qs-search');
     if (si) si.value = '';
+    const cust = document.getElementById('qs-customer-name');
+    if (cust) cust.value = '';
 }
 async function qsRepeatLast() {
     const last = JSON.parse(localStorage.getItem('biz_last_sale') || 'null');
@@ -156,14 +164,20 @@ function posOnSearch(val) {
     if (!val.trim()) { dd.style.display = 'none'; return; }
     const results = bizSearchProducts(val);
     if (!results.length) { dd.innerHTML = '<div class="biz-product-option"><div class="biz-product-option-name">Tidak ditemukan</div></div>'; dd.style.display = 'block'; return; }
-    dd.innerHTML = results.map(p => `
+    dd.innerHTML = results.map(p => {
+        let imgTag = p.image_data ? `<div style="width:32px;height:32px;border-radius:6px;background-image:url(${p.image_data});background-size:cover;background-position:center;flex-shrink:0"></div>` : `<div style="width:32px;height:32px;border-radius:6px;background:var(--biz-surface-2);display:flex;align-items:center;justify-content:center;color:var(--biz-text-dim);flex-shrink:0"><i class="fas fa-box"></i></div>`;
+        return `
         <div class="biz-product-option" onclick="posAddProduct('${p.id}')">
-            <div>
-                <div class="biz-product-option-name">${_esc(p.name)}</div>
-                <div class="biz-product-option-meta">${p.type === 'physical' ? `Stok: ${p.stock || 0}` : p.type}</div>
+            <div style="display:flex;gap:12px;align-items:center">
+                ${imgTag}
+                <div>
+                    <div class="biz-product-option-name">${_esc(p.name)}</div>
+                    <div class="biz-product-option-meta">${p.type === 'physical' ? `Stok: ${p.stock || 0}` : p.type}</div>
+                </div>
             </div>
             <div class="biz-product-option-price">${bizRp(p.price_sell)}</div>
-        </div>`).join('');
+        </div>`
+    }).join('');
     dd.style.display = 'block';
 }
 function posAddProduct(id) {
@@ -195,8 +209,10 @@ function posRenderCart() {
     if (!cEl) return;
 
     document.getElementById('pos-quick-chips').innerHTML =
-        (window.bizState.quickProducts || []).slice(0, 5).map(p =>
-            `<span class="biz-quick-product-chip" onclick="posAddProduct('${p.id}')">${_esc(p.name)}</span>`).join('');
+        (window.bizState.quickProducts || []).slice(0, 5).map(p => {
+            let imgTag = p.image_data ? `<div style="width:16px;height:16px;border-radius:4px;background-image:url(${p.image_data});background-size:cover;background-position:center;display:inline-block;vertical-align:middle;margin-right:6px"></div>` : '';
+            return `<span class="biz-quick-product-chip" onclick="posAddProduct('${p.id}')">${imgTag}${_esc(p.name)}</span>`;
+        }).join('');
 
     if (!_posCart.length) {
         cEl.innerHTML = ''; eEl.style.display = 'block'; tEl.style.display = 'none';
@@ -208,10 +224,13 @@ function posRenderCart() {
 
     let total = 0, profit = 0;
     cEl.innerHTML = _posCart.map((item, i) => {
+        const pCache = window.bizState.productCache.find(pr => pr.id === item.product_id);
+        const imgTag = (pCache && pCache.image_data) ? `<div style="width:36px;height:36px;border-radius:8px;background-image:url(${pCache.image_data});background-size:cover;background-position:center;flex-shrink:0;margin-right:12px"></div>` : `<div style="width:36px;height:36px;border-radius:8px;background:var(--biz-surface-2);display:flex;align-items:center;justify-content:center;color:var(--biz-text-dim);flex-shrink:0;margin-right:12px"><i class="fas fa-box"></i></div>`;
         const sub = item.price * item.qty;
         const pr = (item.price - item.hpp) * item.qty;
         total += sub; profit += pr;
-        return `<div class="biz-cart-item">
+        return `<div class="biz-cart-item" style="display:flex;align-items:center">
+            ${imgTag}
             <div style="flex:1">
                 <div class="biz-cart-item-name">${_esc(item.product_name)}</div>
                 <div style="font-size:11px;color:var(--biz-text-muted)">${bizRp(item.price)} × ${item.qty} = <strong>${bizRp(sub)}</strong></div>
@@ -235,10 +254,13 @@ async function posSave() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
     try {
-        const sale = await bizCreateSale({ businessId: window.bizState.businessId, cartItems: _posCart, paymentMethod: _posPayMethod });
+        const custName = document.getElementById('pos-customer-name')?.value.trim() || '';
+        const sale = await bizCreateSale({ businessId: window.bizState.businessId, cartItems: _posCart, paymentMethod: _posPayMethod, customerName: custName });
         bizToast(`✅ ${_posCart.length} produk terjual — ${bizRp(sale.total_amount)}`, 's');
         bizCloseModal('biz-modal-pos-cart');
         _posCart = []; posRenderCart();
+        const ci = document.getElementById('pos-customer-name');
+        if (ci) ci.value = '';
         await bizPreloadProducts();
         if (window.bizState.activeTab === 'dashboard') await bizLoadDashboard();
         else await bizLoadSales();
@@ -291,12 +313,7 @@ async function bizLoadSales() {
             <div id="sales-layer-3"></div>
         </div>
 
-        <!-- Layer 4, 5, 6, 7: Charts (Lazy loaded container) -->
-        <div id="sales-chart-container" class="sales-chart-lazy" style="min-height:300px; margin-bottom:24px;">
-             <div class="biz-loading" style="padding:20px"><i class="fas fa-spinner fa-spin"></i> Memuat Visualisasi Penjualan...</div>
-        </div>
-
-        <!-- Layer 8: Smart Sales Database (Virtualized Table) -->
+        <!-- Layer 4: Smart Sales Database (Virtualized Table) -->
         <div class="biz-card" style="margin-bottom:24px;overflow:hidden">
             <div class="biz-card-header" style="padding:16px;background:var(--biz-surface-2);border-bottom:1px solid var(--biz-border);display:flex;justify-content:space-between;align-items:center">
                 <div class="biz-card-title"><i class="fas fa-database" style="color:var(--biz-primary)"></i> Transaction Database (Last 100)</div>
@@ -333,7 +350,6 @@ async function bizLoadSales() {
         _salesRenderLayer2();
         _salesRenderLayer3();
         salesRenderChunk(0, '');
-        _salesSetupLazyRendering();
     }, 50);
 }
 
@@ -344,7 +360,7 @@ function _salesRenderLayer1() {
     const refundColor = overview.refundRate > 5 ? 'var(--biz-danger)' : 'var(--biz-text)';
 
     document.getElementById('sales-layer-1').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%, 130px),1fr));gap:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="biz-card" style="padding:16px;border:1px solid rgba(16,185,129,0.3)">
             <div style="font-size:11px;color:var(--biz-success);font-weight:800">REVENUE 30D</div>
             <div style="font-size:20px;font-weight:800;color:var(--biz-success);margin-top:4px">${bizRpFull(overview.rev30)}</div>
@@ -370,7 +386,7 @@ function _salesRenderLayer1() {
             <div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">CANCEL / REFUND</div>
             <div style="font-size:20px;font-weight:800;color:${refundColor};margin-top:4px">${overview.refundRate.toFixed(1)}%</div>
         </div>
-        <div class="biz-card" style="padding:16px;background:var(--biz-surface-2)">
+        <div class="biz-card" style="padding:16px;background:var(--biz-surface-2);grid-column:1 / -1">
             <div style="font-size:11px;color:var(--biz-purple);font-weight:800"><i class="fas fa-wand-magic-sparkles"></i> AI PROJECTED</div>
             <div style="font-size:18px;font-weight:800;color:var(--biz-purple);margin-top:4px">${bizRpFull(overview.projectedRev)}</div>
             <div style="font-size:10px;color:var(--biz-text-muted);font-weight:600;margin-top:6px">Estimasi bulan ini</div>
@@ -413,135 +429,7 @@ function _salesRenderLayer3() {
     </div>`;
 }
 
-function _salesSetupLazyRendering() {
-    const el = document.getElementById('sales-chart-container');
-    if (!el) return;
-    if (!window.IntersectionObserver) { _salesRenderCharts(); return; }
 
-    const observer = new IntersectionObserver((entries, obs) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                _salesRenderCharts();
-                obs.unobserve(entry.target);
-            }
-        });
-    }, { rootMargin: '200px 0px' });
-    observer.observe(el);
-}
-
-function _salesRenderCharts() {
-    const container = document.getElementById('sales-chart-container');
-    if (typeof Chart === 'undefined') { setTimeout(_salesRenderCharts, 500); return; }
-
-    const sd = window._salesSysData;
-    const revDir = sd.overview.revGrowth >= 0 ? 'Naik' : 'Turun';
-    const revColor = sd.overview.revGrowth >= 0 ? 'var(--biz-success)' : 'var(--biz-danger)';
-
-    container.innerHTML = `
-    <!-- Tren & Komposisi -->
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap:20px; margin-bottom:24px;">
-        <div class="biz-card">
-            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="biz-card-title"><i class="fas fa-chart-line" style="color:var(--biz-primary)"></i> Revenue Trend (30D)</div>
-                <div style="font-size:11px; font-weight:700; color:${revColor}">Tren ${revDir} ${Math.abs(sd.overview.revGrowth).toFixed(1)}%</div>
-            </div>
-            <div style="height:260px;position:relative;padding:10px"><canvas id="salesTrendChart"></canvas></div>
-        </div>
-        <div class="biz-card">
-            <div class="biz-card-header"><div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-warning)"></i> Revenue Composition</div></div>
-            <div style="display:flex;flex-wrap:wrap;padding:10px;height:auto;min-height:260px;gap:20px;align-items:center;">
-                <div style="flex:1;min-width:140px;position:relative;height:240px"><div style="text-align:center;font-size:11px;font-weight:700;color:var(--biz-text-dim)">KATEGORI</div><canvas id="salesCatChart"></canvas></div>
-                <div style="flex:1;min-width:140px;position:relative;height:240px"><div style="text-align:center;font-size:11px;font-weight:700;color:var(--biz-text-dim)">CHANNEL</div><canvas id="salesChanChart"></canvas></div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Produk & Customer -->
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap:20px;">
-        <div class="biz-card">
-            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="biz-card-title"><i class="fas fa-boxes-stacked" style="color:var(--biz-success)"></i> Product Performance</div>
-                <div style="font-size:11px; font-weight:700; color:var(--biz-success)">Top: ${_esc(sd.product.topRev[0]?.name || 'N/A')}</div>
-            </div>
-            <div style="height:240px;position:relative;padding:10px"><canvas id="salesProdDualChart"></canvas></div>
-        </div>
-        <div class="biz-card">
-            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="biz-card-title"><i class="fas fa-users" style="color:var(--biz-purple)"></i> Customer Loyalty Frequency</div>
-                <div style="font-size:11px; font-weight:700; color:var(--biz-primary)">${sd.overview.repeatRate.toFixed(1)}% Repeat Rate</div>
-            </div>
-            <div style="height:240px;position:relative;padding:10px"><canvas id="salesFreqChart"></canvas></div>
-        </div>
-    </div>`;
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
-
-    // 1. Dual Line Trend Chart
-    new Chart(document.getElementById('salesTrendChart'), {
-        type: 'line',
-        data: {
-            labels: sd.trends.labels,
-            datasets: [
-                { label: 'Revenue', data: sd.trends.rev, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', yAxisID: 'y', tension: 0.3, fill: true },
-                { label: 'Units Sold', data: sd.trends.vol, borderColor: '#3b82f6', borderDash: [5, 5], yAxisID: 'y1', tension: 0.3 }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            scales: {
-                x: { ticks: { maxTicksLimit: 7 }, grid: { display: false } },
-                y: { type: 'linear', display: true, position: 'left', grid: { color: 'rgba(255,255,255,0.05)' } },
-                y1: { type: 'linear', display: true, position: 'right', grid: { display: false } }
-            },
-            plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { family: "'Inter',sans-serif", size: 11 } } } }
-        }
-    });
-
-    // 2. Category Pie
-    new Chart(document.getElementById('salesCatChart'), {
-        type: 'doughnut',
-        data: { labels: sd.composition.category.labels, datasets: [{ data: sd.composition.category.data, backgroundColor: colors, borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
-    });
-
-    // 3. Channel Pie
-    const chanLabels = sd.composition.channel.map(c => c.channel);
-    const chanData = sd.composition.channel.map(c => c.revenue);
-    new Chart(document.getElementById('salesChanChart'), {
-        type: 'doughnut',
-        data: { labels: chanLabels, datasets: [{ data: chanData, backgroundColor: ['#8b5cf6', '#ec4899', '#f59e0b', '#3b82f6'], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
-    });
-
-    // 4. Products Dual Bar (Rev vs Vol) using double y-axis
-    new Chart(document.getElementById('salesProdDualChart'), {
-        type: 'bar',
-        data: {
-            labels: sd.product.topRev.map(p => p.name.length > 12 ? p.name.substring(0, 10) + '...' : p.name),
-            datasets: [
-                { label: 'Revenue 30D', data: sd.product.topRev.map(p => p.rev), backgroundColor: '#10b981', yAxisID: 'y', borderRadius: 4 },
-                // Map the volumes corresponding to topRev to keep labels aligned
-                { label: 'Units', data: sd.product.topRev.map(p => { const o = sd.product.topVol.find(v => v.name === p.name); return o ? o.vol : 0; }), backgroundColor: '#3b82f6', yAxisID: 'y1', borderRadius: 4 }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: {
-                x: { grid: { display: false } },
-                y: { type: 'linear', display: true, position: 'left' },
-                y1: { type: 'linear', display: true, position: 'right', grid: { display: false } }
-            },
-            plugins: { legend: { position: 'top' } }
-        }
-    });
-
-    // 5. Customer Frequency Polar/Pie
-    new Chart(document.getElementById('salesFreqChart'), {
-        type: 'pie',
-        data: { labels: ['1 Order', '2 Orders', '3+ Orders'], datasets: [{ data: sd.customer.ordersCounts, backgroundColor: ['#64748b', '#3b82f6', '#8b5cf6'], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
-    });
-}
 
 let _salesChunkPos = 0;
 const _salesChunkSize = 25;
@@ -600,9 +488,11 @@ function salesRenderChunk(startIdx, query) {
                 <div style="font-weight:800;font-size:11px;color:${margTxt};margin-top:2px">${s.margin.toFixed(1)}%</div>
             </td>
             <td style="padding:12px 16px;text-align:right">
-                <span style="display:inline-block;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:800;background:var(--biz-surface-2);color:var(--biz-text-dim)">
+                <span style="display:inline-block;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:800;background:var(--biz-surface-2);color:var(--biz-text-dim);margin-bottom:6px">
                     ${s.channel.toUpperCase()}
                 </span>
+                <br>
+                ${s.status === 'completed' ? `<button class="biz-btn biz-btn-ghost" style="padding:4px 8px;font-size:10px;color:var(--biz-danger)" onclick="salesCancelTrx('${s.id}')"><i class="fas fa-ban"></i> Refund</button>` : `<span style="font-size:10px;font-weight:700;color:var(--biz-danger)">REFUNDED</span>`}
             </td>
         </tr>`;
     }).join('');
@@ -616,6 +506,36 @@ function salesRenderChunk(startIdx, query) {
         footer.innerHTML = `Menampilkan terakhir ${filtered.length} transaksi.`;
     }
 }
+
+window.salesCancelTrx = function (id) {
+    if (typeof bizConfirm !== 'function') return;
+    bizConfirm('Refund Transaksi', 'Batalkan transaksi ini? Ini akan mengubah status menjadi Refund dan membatalkan pendapatan/profit penjualan ini di analitik harian.', async () => {
+        try {
+            const sale = await BizDB.sales.getById(id);
+            if (!sale) return;
+            sale.status = 'cancelled';
+            sale.updated_at = new Date().toISOString();
+            await BizDB.sales.save(sale);
+
+            // Void financial snapshot
+            const dt = sale.sale_date || sale.created_at;
+            const dateStr = dt.split('T')[0];
+            await bizUpsertSnapshot(window.bizState.businessId, dateStr, {
+                revenue: -(sale.total_amount || 0),
+                profit: -(sale.total_profit || 0),
+                expenses: 0,
+                orders_count: -1
+            });
+
+            bizToast('Transaksi berhasil direfund', 's');
+            if (typeof bizClearIntelligenceCache === 'function') bizClearIntelligenceCache();
+            await bizLoadSales(); // Re-render everything
+        } catch (e) {
+            console.error(e);
+            bizToast('Gagal membatalkan transaksi', 'e');
+        }
+    });
+};
 
 window.bizLoadSales = bizLoadSales;
 window.salesRenderChunk = salesRenderChunk;

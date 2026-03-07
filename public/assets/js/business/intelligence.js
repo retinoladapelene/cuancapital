@@ -255,7 +255,8 @@ async function bizInventoryHealth(businessId) {
         let stockLabel = 'OK';
 
         // Velocity logic
-        if (avgDaily > 2) { velocityLabel = 'FAST'; stateCounts.fast++; }
+        if (daysSinceSold < 30 && soldIn30 === 0) { velocityLabel = 'NEW'; } // Prevent new products from being labeled DEAD
+        else if (avgDaily > 2) { velocityLabel = 'FAST'; stateCounts.fast++; }
         else if (avgDaily >= 0.5) { velocityLabel = 'NORMAL'; stateCounts.normal++; }
         else if (avgDaily > 0) { velocityLabel = 'SLOW'; stateCounts.slow++; }
         else { velocityLabel = 'DEAD'; stateCounts.dead++; }
@@ -290,7 +291,7 @@ async function bizInventoryHealth(businessId) {
             id: p.id,
             name: p.name,
             sku: p.sku || '-',
-            category: p.category_id || 'Uncategorized',
+            category: p.category || 'Uncategorized',
             stock: p.stock,
             hpp: hpp,
             price: price,
@@ -336,8 +337,14 @@ async function bizInventoryHealth(businessId) {
     const sortedCats = Object.entries(valByCat).sort((a, b) => b[1] - a[1]);
     const totalVal = burnRates.reduce((a, b) => a + b.stockValue, 0) || 1;
 
-    if (sortedCats.length > 0 && (sortedCats[0][1] / totalVal) > 0.4) {
-        insights.push(`Kategori "${sortedCats[0][0]}" menyumbang ${Math.round((sortedCats[0][1] / totalVal) * 100)}% dari total nilai stok (Rp ${(sortedCats[0][1] / 1000000).toFixed(1)}jt).`);
+    // Only push if the top category isn't Uncategorized and still owns > 40% of value
+    if (sortedCats.length > 0) {
+        let topCat = sortedCats[0];
+        if (topCat[0] === 'Uncategorized' && sortedCats.length > 1) topCat = sortedCats[1];
+
+        if (topCat[0] !== 'Uncategorized' && (topCat[1] / totalVal) > 0.4) {
+            insights.push(`Kategori "${topCat[0]}" menyumbang ${Math.round((topCat[1] / totalVal) * 100)}% dari total nilai stok (Rp ${(topCat[1] / 1000000).toFixed(1)}jt).`);
+        }
     }
 
     const fastItems = burnRates.filter(b => b.velocityLabel === 'FAST').sort((a, b) => b.marginPct - a.marginPct);
@@ -648,7 +655,7 @@ async function bizProductIntelligence(businessId) {
         BizDB.sales.getAll()
     ]);
 
-    const physical = products.filter(p => p.type === 'physical' && p.is_active !== false && p.business_id === businessId);
+    const activeProducts = products.filter(p => p.is_active !== false && p.business_id === businessId);
 
     const now = new Date();
     const cutoff30 = new Date(now);
@@ -697,7 +704,7 @@ async function bizProductIntelligence(businessId) {
     let alerts = [];
     let insights = [];
 
-    physical.forEach(p => {
+    activeProducts.forEach(p => {
         const sold30d = dailySalesMap[p.id] || 0;
         const rev30d = revenue30Map[p.id] || 0;
         const prof30d = profit30Map[p.id] || 0;
@@ -706,7 +713,7 @@ async function bizProductIntelligence(businessId) {
         totalRevenue30d += rev30d;
 
         const hpp = p.hpp || 0;
-        const price = p.price || 0;
+        const price = p.price_sell || p.price || 0;
         const marginPct = price > 0 ? Math.round(((price - hpp) / price) * 100) : 0;
 
         if (marginPct >= 30) highMarginCount++;
@@ -735,7 +742,7 @@ async function bizProductIntelligence(businessId) {
         if (lifecycle === 'GROWING' && p.stock <= (p.low_stock_alert || 5) && p.stock > 0) {
             alerts.push({ type: 'warning', icon: 'fa-triangle-exclamation', text: `Barang Laris <b>${p.name}</b> sisa stok hanya ${p.stock}` });
         }
-        if (sold30d === 0 && p.stock > 5) {
+        if (sold30d === 0 && p.stock > 5 && daysSinceLaunch >= 30) {
             alerts.push({ type: 'danger', icon: 'fa-turtle', text: `<b>${p.name}</b> tidak terjual 30 hari (Overstock: ${p.stock})` });
         }
         if (marginPct < 10 && price > 0) {
@@ -756,7 +763,8 @@ async function bizProductIntelligence(businessId) {
             marginPct: marginPct,
             lastSold: lastSold,
             lifecycle: lifecycle,
-            avgDaily: (sold30d / 30).toFixed(1)
+            avgDaily: (sold30d / 30).toFixed(1),
+            image_data: p.image_data || null
         });
     });
 
@@ -810,7 +818,7 @@ async function bizProductIntelligence(businessId) {
 
     const intelResult = {
         stats: {
-            totalProducts: physical.length,
+            totalProducts: activeProducts.length,
             totalRev30d: totalRevenue30d,
             highMargin: highMarginCount,
             lowMargin: lowMarginCount,
@@ -850,11 +858,20 @@ async function bizSalesIntelligence(businessId) {
     const cutoff30d = new Date(now); cutoff30d.setDate(cutoff30d.getDate() - 30);
     const cutoff60d = new Date(now); cutoff60d.setDate(cutoff60d.getDate() - 60);
 
+    // Filter Helper to handle both Date objects and string formats
+    const getSafeDate = (dt) => {
+        if (!dt) return 0;
+        const res = new Date(dt);
+        if (dt.includes('T')) return res.getTime(); // Precise to the minute if created_at
+        // If it's just "YYYY-MM-DD", let it pass as midnight
+        return res.getTime();
+    };
+
     // 1. Split Timeframes
-    const s30d = sAll.filter(s => new Date(s.sale_date || s.created_at) >= cutoff30d);
+    const s30d = sAll.filter(s => getSafeDate(s.sale_date || s.created_at) >= cutoff30d.getTime());
     const sPrev30d = sAll.filter(s => {
-        const d = new Date(s.sale_date || s.created_at);
-        return d >= cutoff60d && d < cutoff30d;
+        const dTime = getSafeDate(s.sale_date || s.created_at);
+        return dTime >= cutoff60d.getTime() && dTime < cutoff30d.getTime();
     });
 
     // Overview KPIs
@@ -862,6 +879,8 @@ async function bizSalesIntelligence(businessId) {
     let ord30 = 0, ordPrev30 = 0;
     let units30 = 0;
     let canceled30 = 0;
+
+    let cogs30 = 0; // To calculate profit30
 
     s30d.forEach(s => {
         if (s.status === 'cancelled') {
@@ -890,9 +909,16 @@ async function bizSalesIntelligence(businessId) {
     const currMonthRev = currMonthSales.reduce((sum, s) => sum + (s.final_total || s.total_amount || 0), 0);
     const projectedRev = daysPassed > 0 ? (currMonthRev / daysPassed) * daysInMonth : 0;
 
-    // Real-Time Pulse (Last 60 mins)
+    // Real-Time Pulse (Last 60 mins) using strict created_at or falling back correctly
     const cutoff60m = new Date(now.getTime() - (60 * 60 * 1000));
-    const s60m = sAll.filter(s => new Date(s.sale_date || s.created_at) >= cutoff60m && s.status !== 'cancelled');
+    const s60m = sAll.filter(s => {
+        // ALWAYS use created_at for live pulsing, because sale_date ("YYYY-MM-DD") parses to midnight
+        const exactTimeStr = s.created_at || s.sale_date;
+        const d = new Date(exactTimeStr);
+        // If it was just "YYYY-MM-DD", d runs at 00:00:00 UTC. To make it pass for 'today' if missing created_at:
+        // we'll strictly trust `d >= cutoff60m` which requires accurate ISO timestamps.
+        return d >= cutoff60m && s.status !== 'cancelled';
+    });
     const rev60m = s60m.reduce((sum, s) => sum + (s.final_total || s.total_amount || 0), 0);
     const ord60m = s60m.length;
 
@@ -917,6 +943,8 @@ async function bizSalesIntelligence(businessId) {
         const pCat = p ? (p.category || 'General') : 'General';
         const lineVal = (si.price * si.quantity) - (si.discount || 0);
 
+        cogs30 += (si.hpp || 0) * si.quantity; // Sum COGS for profit30
+
         catRev[pCat] = (catRev[pCat] || 0) + lineVal;
         prodRev[pName] = (prodRev[pName] || 0) + lineVal;
         prodVol[pName] = (prodVol[pName] || 0) + si.quantity;
@@ -925,6 +953,8 @@ async function bizSalesIntelligence(businessId) {
         if (!saleToProductsMap[si.sale_id]) saleToProductsMap[si.sale_id] = [];
         saleToProductsMap[si.sale_id].push(pName);
     });
+
+    const profit30 = rev30 - cogs30; // Final 30D Profit
 
     // Calculate Bundles (O(N^2) on order lines)
     let pairCounts = {};
@@ -1046,7 +1076,7 @@ async function bizSalesIntelligence(businessId) {
     }
 
     // Pre-process Smart Database (latest 100 sales)
-    const smartDb = s30d.sort((a, b) => new Date(b.sale_date || b.created_at) - new Date(a.sale_date || a.created_at)).slice(0, 100).map(s => {
+    const smartDb = s30d.sort((a, b) => new Date(b.created_at || b.sale_date) - new Date(a.created_at || a.sale_date)).slice(0, 100).map(s => {
         // compute cogs from items
         const is = items30.filter(si => si.sale_id === s.id);
         const cogs = is.reduce((sum, si) => sum + ((si.hpp || 0) * si.quantity), 0);
@@ -1058,7 +1088,7 @@ async function bizSalesIntelligence(businessId) {
 
         return {
             id: s.id,
-            date: s.sale_date || s.created_at,
+            date: s.created_at || s.sale_date,
             trx: s.receipt_no || '-',
             products: prodNames,
             qty: qty,
@@ -1074,7 +1104,7 @@ async function bizSalesIntelligence(businessId) {
     });
 
     const result = {
-        overview: { rev30, revGrowth, ord30, units30, aov, repeatRate: trueRepeatRate, refundRate, projectedRev },
+        overview: { rev30, revGrowth, ord30, profit30, units30, aov, repeatRate: trueRepeatRate, refundRate, projectedRev },
         realtime: { rev60m, ord60m },
         alerts: alerts,
         trends: { labels: trendLabels, rev: trendRev, vol: trendVol, heatmap: heatmap },
@@ -1101,43 +1131,41 @@ async function bizHealthScoreAnalytics(businessId) {
     const cached = _iCacheGet(cacheKey);
     // if (cached) return cached;
 
-    // We fetch derived data by leveraging our other engines to avoid repeating reduction logic
-    // But since this runs on Dashboard mount, we must make sure these run in parallel super fast.
-    const [salesData, invData, profData] = await Promise.all([
+    const [salesData, invData, sales, expenses] = await Promise.all([
         typeof bizSalesIntelligence === 'function' ? bizSalesIntelligence(businessId) : null,
-        typeof bizInventoryIntelligence === 'function' ? bizInventoryIntelligence(businessId) : null,
-        typeof bizCalculateProfitMargin === 'function' ? bizCalculateProfitMargin(businessId) : null,
+        typeof bizInventoryHealth === 'function' ? bizInventoryHealth(businessId) : null,
+        BizDB.sales.getAll(),
+        BizDB.expenses ? BizDB.expenses.getAll() : Promise.resolve([])
     ]);
 
-    if (!salesData || !invData || !profData) return null;
+    if (!salesData || !invData) return null;
+
+    let totalCashBal = 0;
+    sales.forEach(s => { if (s.business_id === businessId && s.status !== 'cancelled') totalCashBal += (s.final_total || s.total_amount || 0); });
+    expenses.forEach(e => { if (e.business_id === businessId) totalCashBal -= (e.amount || 0); });
 
     // 1. Revenue Growth Score (0-100)
-    // growth cap at 100%
     const rgRaw = salesData.overview.revGrowth || 0;
     let revScore = 50 + (rgRaw * 0.5); // flat 0% = 50.
     if (revScore > 100) revScore = 100;
     if (revScore < 0) revScore = 0;
 
     // 2. Profit Margin Score (0-100)
-    // 30% margin is considered "100" in this scale
-    const pmRaw = profData.marginPct || 0;
+    const pmRaw = salesData.overview.rev30 > 0 ? (salesData.overview.profit30 / salesData.overview.rev30) * 100 : 0;
     let profScore = (pmRaw / 30) * 100;
     if (profScore > 100) profScore = 100;
     if (profScore < 0) profScore = 0;
 
     // 3. Inventory Health (0-100)
-    // Ratio of Dead Stock to Total Stock
-    const totalProd = invData.overview.totalProducts || 1;
-    const deadCount = invData.overview.deadStock || 0;
+    const totalProd = Math.max(1, invData.burnRates.length);
+    const deadCount = invData.counts ? invData.counts.dead : 0;
     const invScoreRaw = 100 - ((deadCount / totalProd) * 100);
     let invScore = invScoreRaw;
     if (invScore < 0) invScore = 0;
 
     // 4. Cashflow Stability (0-100)
-    // Derived from Runway if we had fixed expenses. For UMKM, we look at Cash balance vs month Revenue
-    const cashBal = profData.cashBalance || 0;
+    const cashBal = totalCashBal;
     const rev30 = salesData.overview.rev30 || 1;
-    // Ratio: cash on hand vs 1 month of revenue. 1:1 is 100 score.
     let cashScore = (cashBal / rev30) * 100;
     if (cashScore > 100) cashScore = 100;
     if (cashScore < 0) cashScore = 0;
@@ -1180,16 +1208,17 @@ async function bizGenerateGlobalInsights(businessId) {
     const cached = _iCacheGet(cacheKey);
     // if (cached) return cached;
 
-    const [sales, inv, prof, radar] = await Promise.all([
+    const [sales, inv] = await Promise.all([
         typeof bizSalesIntelligence === 'function' ? bizSalesIntelligence(businessId) : null,
-        typeof bizInventoryIntelligence === 'function' ? bizInventoryIntelligence(businessId) : null,
-        typeof bizCalculateProfitMargin === 'function' ? bizCalculateProfitMargin(businessId) : null,
-        bizHealthScoreAnalytics(businessId)
+        typeof bizInventoryHealth === 'function' ? bizInventoryHealth(businessId) : null
     ]);
 
-    if (!sales || !inv || !prof || !radar) return [];
+    if (!sales || !inv) return [];
 
     const insights = [];
+    const marginPct = sales.overview.rev30 > 0 ? (sales.overview.profit30 / sales.overview.rev30) * 100 : 0;
+    const deadStock = inv.counts ? inv.counts.dead : 0;
+    const lowStock = inv.counts ? inv.counts.low : 0;
 
     // CFO Insight 1: Sales / Revenue Growth
     if (sales.overview.revGrowth > 10) {
@@ -1199,18 +1228,18 @@ async function bizGenerateGlobalInsights(businessId) {
     }
 
     // CFO Insight 2: Profit Margin Trap
-    if (prof.marginPct > 0 && prof.marginPct < 15) {
-        insights.push({ icon: '⚠', text: `Margin profit rata-rata kamu hanya ${prof.marginPct.toFixed(1)}%. Evaluasi harga jual atau COGS agar bisnis tetap bernapas.` });
-    } else if (prof.marginPct >= 30) {
+    if (marginPct > 0 && marginPct < 15) {
+        insights.push({ icon: '⚠', text: `Margin profit rata-rata kamu hanya ${marginPct.toFixed(1)}%. Evaluasi harga jual atau COGS agar bisnis tetap bernapas.` });
+    } else if (marginPct >= 30) {
         insights.push({ icon: '💰', text: `Margin profit bisnis sangat bagus (>30%). Margin tebal membuat bisnis aman dari krisis.` });
     }
 
     // CFO Insight 3: Inventory Leaks
-    if (inv.overview.deadStock > 0) {
-        insights.push({ icon: '📦', text: `Ada ${inv.overview.deadStock} produk berstatus Dead-Stock (>90 hari tidak laku). Segera obral agar uang kembali.` });
+    if (deadStock > 0) {
+        insights.push({ icon: '📦', text: `Ada ${deadStock} produk berstatus Dead-Stock (>90 hari tidak laku). Segera obral agar uang kembali.` });
     }
-    if (inv.overview.lowStock > 0) {
-        insights.push({ icon: '⚡', text: `${inv.overview.lowStock} produk terlaris mulai kehabisan stok. Segera restock sebelum kehabisan!` });
+    if (lowStock > 0) {
+        insights.push({ icon: '⚡', text: `${lowStock} produk terlaris mulai kehabisan stok. Segera restock sebelum kehabisan!` });
     }
 
     // CFO Insight 4: Customer Retention

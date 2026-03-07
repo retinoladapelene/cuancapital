@@ -38,10 +38,31 @@ function hppRenderRows() {
     hppCalcTotal();
 }
 function hppCalcTotal() {
-    const total = _hppRows.reduce((s, r) => s + (parseFloat(r.cost) || 0), 0);
+    // 1. Calculate Raw Materials
+    const totalMaterials = _hppRows.reduce((s, r) => s + (parseFloat(r.cost) || 0), 0);
+
+    // 2. Read Yield & Overhead
+    const yieldEl = document.getElementById('hpp-yield');
+    const yieldQty = Math.max(1, parseInt(yieldEl ? yieldEl.value : 1) || 1);
+
+    const overheadEl = document.getElementById('hpp-overhead');
+    const overheadCost = parseFloat(overheadEl ? overheadEl.value : 0) || 0;
+
+    // 3. Math Time
+    const hppBahanPerPorsi = totalMaterials / yieldQty;
+    const finalHpp = hppBahanPerPorsi + overheadCost;
+
+    // 4. Update Displays
+    const sb = document.getElementById('hpp-sub-bahan');
+    if (sb) sb.textContent = `Rp ${bizRp(totalMaterials)} / ${yieldQty} = Rp ${bizRp(hppBahanPerPorsi)}`;
+
+    const so = document.getElementById('hpp-sub-overhead');
+    if (so) so.textContent = `Rp ${bizRp(overheadCost)}`;
+
     const el = document.getElementById('hpp-calc-total');
-    if (el) el.textContent = bizRpFull(total);
-    return total;
+    if (el) el.textContent = bizRpFull(finalHpp);
+
+    return finalHpp;
 }
 function hppApplyToProduct() {
     const total = hppCalcTotal();
@@ -78,15 +99,88 @@ window.hppRemoveRow = hppRemoveRow; window.hppUpdateRow = hppUpdateRow;
 window.hppApplyToProduct = hppApplyToProduct; window.hppCalcTotal = hppCalcTotal;
 window.prodUpdateMarginPreview = prodUpdateMarginPreview; window.prodTypeChange = prodTypeChange;
 
+// ── Image Upload Base64 Compression ──────────────────────────────────────────
+function prodHandleImageUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+
+    // File type validation
+    if (!file.type.startsWith('image/')) {
+        bizToast('Harap pilih file gambar (JPG/PNG)', 'w');
+        input.value = '';
+        return;
+    }
+
+    // Strict 2MB File Size Limit
+    const maxSizeMB = 2;
+    if (file.size > maxSizeMB * 1024 * 1024) {
+        bizToast(`Ukuran file terlalu besar! Maksimal ${maxSizeMB}MB`, 'e');
+        input.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const MAX_SIZE = 500;
+
+            if (width > height) {
+                if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+            } else {
+                if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85); // 85% quality
+            const base64Input = document.getElementById('prod-image-base64');
+            const preview = document.getElementById('prod-image-preview');
+
+            if (base64Input) base64Input.value = dataUrl;
+            if (preview) {
+                preview.style.backgroundImage = `url(${dataUrl})`;
+                preview.innerHTML = '';
+            }
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+window.prodHandleImageUpload = prodHandleImageUpload;
+
 // ── Open Add Product Form ────────────────────────────────────────────────────
 function bizOpenAddProduct() {
     document.getElementById('prod-id').value = '';
     document.getElementById('prod-name').value = '';
+    document.getElementById('prod-category').value = '';
     document.getElementById('prod-price').value = '';
     document.getElementById('prod-hpp').value = '';
     document.getElementById('prod-stock').value = '0';
     document.getElementById('prod-low-alert').value = '5';
     document.getElementById('prod-type').value = 'physical';
+
+    // Reset image
+    const imgInput = document.getElementById('prod-image');
+    if (imgInput) imgInput.value = '';
+    const imgBase64 = document.getElementById('prod-image-base64');
+    if (imgBase64) imgBase64.value = '';
+    const imgPrev = document.getElementById('prod-image-preview');
+    if (imgPrev) {
+        imgPrev.style.backgroundImage = 'none';
+        imgPrev.innerHTML = '<i class="fas fa-camera"></i>';
+    }
+
+    // Reset HPP state
+    const ye = document.getElementById('hpp-yield'); if (ye) ye.value = 1;
+    const oe = document.getElementById('hpp-overhead'); if (oe) oe.value = '';
+
     document.getElementById('product-modal-title').innerHTML = '<i class="fas fa-box"></i> Tambah Produk';
     _hppRows = []; hppRenderRows();
     _hppOpen = false;
@@ -100,6 +194,7 @@ function bizOpenAddProduct() {
 function bizOpenEditProduct(product) {
     document.getElementById('prod-id').value = product.id;
     document.getElementById('prod-name').value = product.name;
+    document.getElementById('prod-category').value = product.category || '';
     document.getElementById('prod-price').value = product.price_sell;
     document.getElementById('prod-hpp').value = product.hpp || 0;
     document.getElementById('prod-stock').value = product.stock || 0;
@@ -107,10 +202,43 @@ function bizOpenEditProduct(product) {
     document.getElementById('prod-type').value = product.type || 'physical';
     document.getElementById('product-modal-title').innerHTML = '<i class="fas fa-pencil"></i> Edit Produk';
     prodTypeChange(); prodUpdateMarginPreview();
-    // Load ingredients
+
+    // Load ingredients & config
     BizDB.ingredients.getAll().then(ings => {
-        _hppRows = ings.filter(r => r.product_id === product.id).map(r => ({ name: r.name, cost: r.cost, qty: r.quantity || 1, unit: r.unit || '' }));
-        hppRenderRows();
+        const productIngs = ings.filter(r => r.product_id === product.id);
+
+        // Extract config rows if exist
+        const yieldRow = productIngs.find(r => r.name === '__HPP_YIELD__');
+        const yieldQty = yieldRow ? (yieldRow.quantity || 1) : 1;
+        const ye = document.getElementById('hpp-yield'); if (ye) ye.value = yieldQty;
+
+        const overheadRow = productIngs.find(r => r.name === '__HPP_OVERHEAD__');
+        const overheadCost = overheadRow ? (overheadRow.cost || 0) : 0;
+        const oe = document.getElementById('hpp-overhead'); if (oe) oe.value = overheadCost || '';
+
+        // Load image
+        const imgInput = document.getElementById('prod-image');
+        if (imgInput) imgInput.value = ''; // Reset file input
+        const imgBase64 = document.getElementById('prod-image-base64');
+        const imgPrev = document.getElementById('prod-image-preview');
+
+        if (product.image_data) {
+            if (imgBase64) imgBase64.value = product.image_data;
+            if (imgPrev) {
+                imgPrev.style.backgroundImage = `url(${product.image_data})`;
+                imgPrev.innerHTML = '';
+            }
+        } else {
+            if (imgBase64) imgBase64.value = '';
+            if (imgPrev) {
+                imgPrev.style.backgroundImage = 'none';
+                imgPrev.innerHTML = '<i class="fas fa-camera"></i>';
+            }
+        }
+
+        // Normal rows
+        _hppRows = productIngs.filter(r => !r.name.startsWith('__HPP')).map(r => ({ name: r.name, cost: r.cost, qty: r.quantity || 1, unit: r.unit || '' }));
+        hppRenderRows(); // also triggers calc total
     });
     bizOpenModal('biz-modal-product');
 }
@@ -121,6 +249,7 @@ window.bizOpenEditProduct = bizOpenEditProduct;
 async function bizSaveProduct() {
     const id = document.getElementById('prod-id').value.trim();
     const name = document.getElementById('prod-name').value.trim();
+    const category = document.getElementById('prod-category').value.trim() || 'Uncategorized';
     const price = parseFloat(document.getElementById('prod-price').value) || 0;
     const hpp = parseFloat(document.getElementById('prod-hpp').value) || 0;
     const type = document.getElementById('prod-type').value;
@@ -130,16 +259,19 @@ async function bizSaveProduct() {
     const bizId = window.bizState.businessId;
     const now = new Date().toISOString();
     const prodId = id || bizUUID();
+    const image_data = document.getElementById('prod-image-base64')?.value || null;
 
     const prodDoc = {
         id: prodId,
         business_id: bizId,
         name,
+        category: document.getElementById('prod-category').value || 'Lainnya',
         price_sell: price,
         hpp,
         type,
         stock: type === 'physical' ? (parseInt(document.getElementById('prod-stock').value) || 0) : null,
         low_stock_alert: parseInt(document.getElementById('prod-low-alert').value) || 5,
+        image_data,
         is_active: true,
         created_at: id ? undefined : now,
         updated_at: now,
@@ -148,14 +280,26 @@ async function bizSaveProduct() {
 
     await BizDB.products.save(prodDoc);
 
-    // Save ingredients
-    if (_hppRows.length) {
-        // Remove old ingredients for this product
-        const existing = await BizDB.ingredients.getAll();
-        for (const old of existing.filter(r => r.product_id === prodId)) await BizDB.ingredients.delete(old.id);
-        for (const row of _hppRows.filter(r => r.name)) {
-            await BizDB.ingredients.save({ id: bizUUID(), product_id: prodId, name: row.name, cost: row.cost, quantity: row.qty || 1, unit: row.unit || '', created_at: now });
-        }
+    // Save ingredients & config
+    const ye = document.getElementById('hpp-yield');
+    const yieldQty = ye ? Math.max(1, parseInt(ye.value) || 1) : 1;
+
+    const oe = document.getElementById('hpp-overhead');
+    const overheadCost = oe ? (parseFloat(oe.value) || 0) : 0;
+
+    // Remove old ingredients/config for this product
+    const existing = await BizDB.ingredients.getAll();
+    for (const old of existing.filter(r => r.product_id === prodId)) await BizDB.ingredients.delete(old.id);
+
+    // Save normal ingredients
+    for (const row of _hppRows.filter(r => r.name)) {
+        await BizDB.ingredients.save({ id: bizUUID(), product_id: prodId, name: row.name, cost: row.cost, quantity: row.qty || 1, unit: row.unit || '', created_at: now });
+    }
+
+    // Save config as special ingredients if we have an HPP calculation
+    if (_hppRows.length > 0) {
+        if (yieldQty !== 1) await BizDB.ingredients.save({ id: bizUUID(), product_id: prodId, name: '__HPP_YIELD__', cost: 0, quantity: yieldQty, unit: 'porsi', created_at: now });
+        if (overheadCost > 0) await BizDB.ingredients.save({ id: bizUUID(), product_id: prodId, name: '__HPP_OVERHEAD__', cost: overheadCost, quantity: 1, unit: '', created_at: now });
     }
 
     await bizPreloadProducts();
@@ -200,11 +344,6 @@ async function bizLoadProducts() {
         <!-- Layer 3: AI Product Insights -->
         <div id="prod-layer-3" style="margin-bottom:24px;"></div>
 
-        <!-- Layer 4: Product Analytics -->
-        <div id="prod-layer-4" class="prod-chart-lazy" style="min-height:300px; margin-bottom:24px;">
-             <div class="biz-loading" style="padding:20px"><i class="fas fa-spinner fa-spin"></i> Memuat Visualisasi...</div>
-        </div>
-
         <!-- Layer 5: Product Database (Virtualized Table) -->
         <div class="biz-card" style="margin-bottom:24px;overflow:hidden">
             <div class="biz-card-header" style="padding:16px;background:var(--biz-surface-2);border-bottom:1px solid var(--biz-border);display:flex;justify-content:space-between;align-items:center">
@@ -217,22 +356,8 @@ async function bizLoadProducts() {
                 </div>
             </div>
             
-            <div style="overflow-x:auto;">
-                <table style="width:100%;text-align:left;border-collapse:collapse;min-width:900px">
-                    <thead style="background:var(--biz-surface-2);font-size:11px;font-weight:700;color:var(--biz-text-dim);text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;z-index:10;box-shadow:0 1px 0 var(--biz-border)">
-                        <tr>
-                            <th style="padding:12px 16px">Produk & Kategori</th>
-                            <th style="padding:12px 16px;text-align:right">Harga & Margin</th>
-                            <th style="padding:12px 16px;text-align:right">Unit Terjual (30D)</th>
-                            <th style="padding:12px 16px;text-align:right">Revenue & Profit</th>
-                            <th style="padding:12px 16px;text-align:center">Lifecycle</th>
-                            <th style="padding:12px 16px;text-align:right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="prod-table-body">
-                        <!-- Virtualized rows here -->
-                    </tbody>
-                </table>
+            <div id="prod-table-body" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(min(100%, 320px), 1fr));justify-content:center;gap:16px;padding:16px;background:var(--biz-surface);">
+                <!-- Virtualized grid cards here -->
             </div>
             <div id="prod-table-footer" style="padding:12px;text-align:center;font-size:12px;color:var(--biz-text-dim);background:var(--biz-surface-2)"></div>
         </div>
@@ -243,14 +368,13 @@ async function bizLoadProducts() {
         _prodRenderLayer2();
         _prodRenderLayer3();
         prodRenderChunk(0, '');
-        prodSetupLazyRendering();
     }, 50);
 }
 
 function _prodRenderLayer1() {
     const { stats } = window._prodSysData;
     const html = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%, 140px),1fr));gap:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">TOTAL PRODUK</div><div style="font-size:20px;font-weight:800;margin-top:4px">${stats.totalProducts}</div></div>
         <div class="biz-card" style="padding:16px"><div style="font-size:11px;color:var(--biz-text-dim);font-weight:700">REVENUE 30D</div><div style="font-size:20px;font-weight:800;color:var(--biz-primary);margin-top:4px">${bizRpFull(stats.totalRev30d)}</div></div>
         <div class="biz-card" style="padding:16px;border:1px solid rgba(16,185,129,0.2)"><div style="font-size:11px;color:var(--biz-success);font-weight:700">MARGIN TINGGI</div><div style="font-size:20px;font-weight:800;color:var(--biz-success);margin-top:4px">${stats.highMargin}</div></div>
@@ -299,100 +423,7 @@ function _prodRenderLayer3() {
     document.getElementById('prod-layer-3').innerHTML = html;
 }
 
-function prodSetupLazyRendering() {
-    const el = document.getElementById('prod-layer-4');
-    if (!el) return;
-    if (!window.IntersectionObserver) { _prodRenderLayer4(); return; }
 
-    const observer = new IntersectionObserver((entries, obs) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                _prodRenderLayer4();
-                obs.unobserve(entry.target);
-            }
-        });
-    }, { rootMargin: '200px 0px' });
-    observer.observe(el);
-}
-
-function _prodRenderLayer4() {
-    const container = document.getElementById('prod-layer-4');
-    if (typeof Chart === 'undefined') { setTimeout(_prodRenderLayer4, 500); return; }
-
-    const rd = window._prodSysData;
-
-    // Insights Logic
-    const topRevName = rd.top10Rev.labels[0] || 'N/A';
-    const topProfName = rd.top10Prof.labels[0] || 'N/A';
-    const marginUnder10 = rd.distribution.under10;
-    const marginLabel = marginUnder10 > 5 ? `<span style="color:var(--biz-danger)">${marginUnder10} Produk Margin Rendah</span>` : `<span style="color:var(--biz-success)">Margin Sehat</span>`;
-
-    container.innerHTML = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap:20px;">
-        <div class="biz-card">
-            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="biz-card-title"><i class="fas fa-money-bill-wave" style="color:var(--biz-success)"></i> Top 10 Revenue</div>
-                <div style="font-size:11px; font-weight:700; color:var(--biz-success)">#1: ${_esc(topRevName)}</div>
-            </div>
-            <div style="height:220px;position:relative;padding:10px"><canvas id="prodRevChart"></canvas></div>
-        </div>
-        <div class="biz-card">
-            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="biz-card-title"><i class="fas fa-hand-holding-dollar" style="color:var(--biz-primary)"></i> Top 10 Profit</div>
-                <div style="font-size:11px; font-weight:700; color:var(--biz-primary)">#1: ${_esc(topProfName)}</div>
-            </div>
-            <div style="height:220px;position:relative;padding:10px"><canvas id="prodProfChart"></canvas></div>
-        </div>
-        <div class="biz-card">
-            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="biz-card-title"><i class="fas fa-chart-pie" style="color:var(--biz-warning)"></i> Revenue Concentration</div>
-            </div>
-            <div style="height:220px;position:relative;padding:10px"><canvas id="prodConcChart"></canvas></div>
-        </div>
-        <div class="biz-card">
-            <div class="biz-card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="biz-card-title"><i class="fas fa-tags" style="color:var(--biz-purple)"></i> Margin Distribution</div>
-                <div style="font-size:11px; font-weight:700;">${marginLabel}</div>
-            </div>
-            <div style="height:220px;position:relative;padding:10px"><canvas id="prodMarginChart"></canvas></div>
-        </div>
-    </div>`;
-
-    const ctxRev = document.getElementById('prodRevChart');
-    const ctxProf = document.getElementById('prodProfChart');
-    const ctxConc = document.getElementById('prodConcChart');
-    const ctxMargin = document.getElementById('prodMarginChart');
-
-    if (window.bizProdRevChartInst) window.bizProdRevChartInst.destroy();
-    if (window.bizProdProfChartInst) window.bizProdProfChartInst.destroy();
-    if (window.bizProdConcChartInst) window.bizProdConcChartInst.destroy();
-    if (window.bizProdMarginChartInst) window.bizProdMarginChartInst.destroy();
-
-    // rd already declared above
-
-    window.bizProdRevChartInst = new Chart(ctxRev, {
-        type: 'bar',
-        data: { labels: rd.top10Rev.labels, datasets: [{ label: 'Revenue 30D', data: rd.top10Rev.data, backgroundColor: '#10b981', borderRadius: 4 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, indexAxis: 'y', scales: { x: { display: false } } }
-    });
-
-    window.bizProdProfChartInst = new Chart(ctxProf, {
-        type: 'bar',
-        data: { labels: rd.top10Prof.labels, datasets: [{ label: 'Profit 30D', data: rd.top10Prof.data, backgroundColor: '#3b82f6', borderRadius: 4 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, indexAxis: 'y', scales: { x: { display: false } } }
-    });
-
-    window.bizProdConcChartInst = new Chart(ctxConc, {
-        type: 'doughnut',
-        data: { labels: ['Top 5 Products', 'Lainnya'], datasets: [{ data: [rd.concentration.top5, rd.concentration.rest], backgroundColor: ['#f59e0b', '#e5e7eb'], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: "'Inter',sans-serif", size: 11 } } } } }
-    });
-
-    window.bizProdMarginChartInst = new Chart(ctxMargin, {
-        type: 'doughnut',
-        data: { labels: ['<10%', '10-20%', '20-30%', '>30%'], datasets: [{ data: [rd.distribution.under10, rd.distribution.tenTo20, rd.distribution.twentyTo30, rd.distribution.over30], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: "'Inter',sans-serif", size: 11 } } } } }
-    });
-}
 
 let _prodChunkPos = 0;
 const _prodChunkSize = 30;
@@ -422,10 +453,13 @@ function prodRenderChunk(startIdx, query) {
     const chunk = filtered.slice(startIdx, startIdx + _prodChunkSize);
 
     if (chunk.length === 0 && startIdx === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--biz-text-muted)"><i class="fas fa-box-open fa-2x"></i><br>Tidak ditemukan produk yang cocok.</td></tr>';
+        tbody.style.display = 'block';
+        tbody.innerHTML = '<div style="padding:40px;text-align:center;color:var(--biz-text-muted)"><i class="fas fa-box-open fa-3x" style="margin-bottom:16px;opacity:0.5"></i><br><span style="font-size:15px;font-weight:600">Tidak ditemukan produk yang cocok.</span></div>';
         footer.innerHTML = '';
         return;
     }
+
+    tbody.style.display = 'grid';
 
     const html = chunk.map(p => {
         let lCol = p.lifecycle === 'GROWING' ? 'background:var(--biz-info-bg);color:var(--biz-info)' :
@@ -438,33 +472,57 @@ function prodRenderChunk(startIdx, query) {
                 p.lifecycle === 'DECLINING' ? 'fa-arrow-trend-down' : 'fa-balance-scale';
 
         let mTxt = p.marginPct < 10 ? 'var(--biz-danger)' : p.marginPct >= 30 ? 'var(--biz-success)' : 'var(--biz-text)';
+        let stockTxt = p.type === 'physical' ? p.stock + ' <span style="font-size:10px;color:var(--biz-text-dim)">pcs</span>' : '- <span style="font-size:10px;color:var(--biz-text-dim)">' + p.type + '</span>';
 
-        return `<tr style="border-bottom:1px solid var(--biz-border);transition:all 0.2s">
-            <td style="padding:12px 16px">
-                <div style="font-weight:700;font-size:13px;color:var(--biz-text)">${_esc(p.name)}</div>
-                <div style="font-size:11px;color:var(--biz-text-muted);margin-top:2px">${_esc(p.category || 'General')} · ${_esc(p.sku)}</div>
-            </td>
-            <td style="padding:12px 16px;text-align:right">
-                <span style="font-size:13px;font-weight:700">${bizRp(p.price)}</span>
-                <div style="font-size:10px;font-weight:800;color:${mTxt};margin-top:2px">${p.marginPct}% Margin</div>
-            </td>
-            <td style="padding:12px 16px;text-align:right">
-                <div style="font-weight:700;font-size:13px">${p.sold30d} <span style="font-size:10px;color:var(--biz-text-dim)">pcs</span></div>
-                <div style="font-size:10px;color:var(--biz-text-muted);margin-top:2px"><i class="fas fa-clock"></i> ${p.avgDaily} / hr</div>
-            </td>
-            <td style="padding:12px 16px;text-align:right">
-                <div style="font-weight:700;font-size:13px;color:var(--biz-success)">${bizRpFull(p.rev30d)} Rev</div>
-                <div style="font-weight:700;font-size:10px;color:var(--biz-primary);margin-top:2px">${bizRpFull(p.prof30d)} Prof</div>
-            </td>
-            <td style="padding:12px 16px;text-align:center">
-                <span style="display:inline-block;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:800;${lCol}">
-                    <i class="fas ${lIcon}" style="margin-right:2px"></i> ${p.lifecycle}
-                </span>
-            </td>
-            <td style="padding:12px 16px;text-align:right">
-                <button class="biz-btn biz-btn-ghost biz-btn-sm" onclick="bizOpenEditAction('${p.id}')" title="Edit Produk"><i class="fas fa-pencil"></i></button>
-            </td>
-        </tr>`;
+        let imgStyle = p.image_data
+            ? `background-image:url('${p.image_data}');background-size:cover;background-position:center;`
+            : `background:var(--biz-surface-2);display:flex;align-items:center;justify-content:center;color:var(--biz-text-dim);font-size:24px;`;
+
+        return `<div class="biz-card" style="display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--biz-border);transition:transform 0.2s, box-shadow 0.2s;cursor:pointer" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.05)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+            <!-- Headline & Image -->
+            <div style="display:flex;gap:16px;padding:16px;border-bottom:1px dashed var(--biz-border)">
+                <div style="width:70px;height:70px;border-radius:12px;flex-shrink:0;${imgStyle}">
+                    ${p.image_data ? '' : '<i class="fas fa-box"></i>'}
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center">
+                    <div style="font-weight:800;font-size:15px;color:var(--biz-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${_esc(p.name)}">${_esc(p.name)}</div>
+                    <div style="font-size:12px;color:var(--biz-text-muted);margin-top:4px"><i class="fas fa-tag"></i> ${_esc(p.category || 'General')}</div>
+                    <div style="font-size:11px;color:var(--biz-text-dim);margin-top:2px">SKU: ${_esc(p.sku)}</div>
+                </div>
+                <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between">
+                    <span style="display:inline-block;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:800;${lCol}">
+                        <i class="fas ${lIcon}" style="margin-right:2px"></i> ${p.lifecycle}
+                    </span>
+                    <div style="display:flex;gap:4px">
+                        <button class="biz-btn biz-btn-ghost biz-btn-sm" style="padding:4px 8px" onclick="bizOpenEditAction('${p.id}')"><i class="fas fa-pencil"></i></button>
+                        <button class="biz-btn biz-btn-ghost biz-btn-sm" style="padding:4px 8px;color:var(--biz-danger)" onclick="bizDeleteProductConfirm('${p.id}', '${_esc(p.name)}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+            <!-- Analytics Body -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;background:var(--biz-surface-2)">
+                <div>
+                    <div style="font-size:10px;color:var(--biz-text-dim);font-weight:700">HARGA & MARGIN</div>
+                    <div style="font-size:14px;font-weight:800;margin-top:2px">${bizRp(p.price)}</div>
+                    <div style="font-size:11px;font-weight:700;color:${mTxt};margin-top:2px">${p.marginPct}% Margin</div>
+                </div>
+                <div>
+                    <div style="font-size:10px;color:var(--biz-text-dim);font-weight:700">TERJUAL (30D)</div>
+                    <div style="font-size:14px;font-weight:800;margin-top:2px">${p.sold30d} <span style="font-size:10px;font-weight:600;color:var(--biz-text-muted)">pcs</span></div>
+                    <div style="font-size:11px;color:var(--biz-text-muted);margin-top:2px"><i class="fas fa-clock"></i> ${p.avgDaily}/hr</div>
+                </div>
+                <div style="grid-column: span 2;border-top:1px dashed var(--biz-border);padding-top:12px;margin-top:4px">
+                    <div style="font-size:10px;color:var(--biz-text-dim);font-weight:700;display:flex;justify-content:space-between">
+                        <span>EST. REVENUE</span>
+                        <span>EST. PROFIT</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-top:4px">
+                        <span style="font-size:14px;font-weight:800;color:var(--biz-success)">${bizRpFull(p.rev30d)}</span>
+                        <span style="font-size:14px;font-weight:800;color:var(--biz-primary)">${bizRpFull(p.prof30d)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
     }).join('');
 
     tbody.insertAdjacentHTML('beforeend', html);
@@ -483,6 +541,30 @@ async function bizOpenEditAction(id) {
     if (p) bizOpenEditProduct(p);
 }
 
+function bizDeleteProductConfirm(id, name) {
+    if (typeof bizConfirm === 'function') {
+        bizConfirm(
+            'Hapus Produk',
+            `Apakah Anda yakin ingin menghapus produk <b>${name}</b>?<br>Data penjualan terkait tetap utuh (aman), tapi produk ini akan dikeranjangkan / hilang dari katalog inventaris.`,
+            async () => {
+                const products = await BizDB.products.getAll();
+                const p = products.find(prod => prod.id === id);
+                if (p) {
+                    p.is_active = false;
+                    p.updated_at = new Date().toISOString();
+                    await BizDB.products.save(p);
+                    bizToast('Produk berhasil dihapus', 's');
+                    bizClearIntelligenceCache();
+                    await bizPreloadProducts();
+                    if (window.bizState.activeTab === 'products') await bizLoadProducts();
+                }
+            },
+            'danger'
+        );
+    }
+}
+
 window.bizLoadProducts = bizLoadProducts;
 window.prodRenderChunk = prodRenderChunk;
 window.bizOpenEditAction = bizOpenEditAction;
+window.bizDeleteProductConfirm = bizDeleteProductConfirm;

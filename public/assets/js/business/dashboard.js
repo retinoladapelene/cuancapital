@@ -24,8 +24,7 @@ async function bizLoadDashboard() {
         style.id = 'dash-grid-styles';
         style.innerHTML = `
             @media (min-width: 1024px) {
-                .dash-radar-col { grid-column: span 5 !important; }
-                .dash-ai-col { grid-column: span 7 !important; }
+                .dash-ai-col { grid-column: span 12 !important; }
             }
             @keyframes pulse { 0% { opacity:0.5; transform:scale(0.8) } 50% { opacity:1; transform:scale(1.2) } 100% { opacity:0.5; transform:scale(0.8) } }
         `;
@@ -33,24 +32,26 @@ async function bizLoadDashboard() {
     }
 
     // Load data in parallel using the Intelligence engines
-    const [salesIntel, healthRadar, cfoInsights, sales] = await Promise.all([
+    const [salesIntel, healthRadar, cfoInsights, sales, expenses] = await Promise.all([
         typeof bizSalesIntelligence === 'function' ? bizSalesIntelligence(bizId) : null,
         typeof bizHealthScoreAnalytics === 'function' ? bizHealthScoreAnalytics(bizId) : null,
         typeof bizGenerateGlobalInsights === 'function' ? bizGenerateGlobalInsights(bizId) : null,
-        BizDB.sales.getAll()
+        BizDB.sales.getAll(),
+        BizDB.expenses ? BizDB.expenses.getAll() : Promise.resolve([])
     ]);
 
     // ZONE 1: Strategic Pulse
     if (salesIntel) {
-        // Find cash safely
-        const snaps = await BizDB.finSnapshots.getAll();
-        const todaySnap = snaps.find(s => s.snapshot_date === _fmtDate(new Date()) && s.business_id === bizId) || {};
+        // Find cash safely by iterating all sales vs expenses for exact precision
+        let totalCashBal = 0;
+        sales.forEach(s => { if (s.business_id === bizId && s.status !== 'cancelled') totalCashBal += (s.final_total || s.total_amount || 0); });
+        expenses.forEach(e => { if (e.business_id === bizId) totalCashBal -= (e.amount || 0); });
 
         // Use sales intel for highly accurate 30day rolling window, mapped to UI
         const rev30 = salesIntel.overview.rev30 || 0;
-        const prof30 = salesIntel.overview.profit30 || 0; // Approximated from sales if needed, but snapshots are better for net
-        const ords = salesIntel.overview.orders || 0;
-        const cashBal = todaySnap.cash_balance || 0;
+        const prof30 = salesIntel.overview.profit30 || 0;
+        const ords = salesIntel.overview.ord30 || 0;
+        const cashBal = totalCashBal;
 
         // Determine profit safely
         let netProfit30 = prof30;
@@ -106,17 +107,7 @@ async function bizLoadDashboard() {
         }
     }
 
-    // ZONE 3: Profit Radar
-    if (healthRadar) {
-        const sEl = document.getElementById('dash-radar-score');
-        sEl.textContent = `${healthRadar.score} — ${healthRadar.status}`;
-        if (healthRadar.score >= 80) { sEl.style.color = 'var(--biz-primary)'; sEl.style.background = 'var(--biz-primary-light)'; }
-        else if (healthRadar.score < 50) { sEl.style.color = 'var(--biz-danger)'; sEl.style.background = 'rgba(239, 68, 68, 0.1)'; }
 
-        _dashRenderRadarChart(healthRadar.axes);
-    } else {
-        document.getElementById('dashRadarChart').parentElement.innerHTML = '<div class="biz-empty" style="padding:20px; text-align:center"><i class="fas fa-chart-pie"></i><br>Belum cukup data untuk Radar</div>';
-    }
 
     // ZONE 4: AI CFO Insights
     const ifeed = document.getElementById('dash-zone4-insights');
@@ -137,68 +128,7 @@ async function bizLoadDashboard() {
     _dashRenderRecentSales(sales);
 }
 
-// Ensure the chart is painted after the canvas is physically inside the DOM flow
-function _dashRenderRadarChart(axes) {
-    if (typeof Chart === 'undefined') return;
-    const ctx = document.getElementById('dashRadarChart');
-    if (!ctx) return;
 
-    const dataArr = [axes.revenue, axes.profit, axes.inventory, axes.cashflow, axes.customer];
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-    const brandColor = '#3b82f6'; // primary
-
-    new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: ['Rev Growth', 'Margin', 'Inv Health', 'Cashflow', 'Loyalty'],
-            datasets: [{
-                label: 'Business Vitals',
-                data: dataArr,
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                borderColor: brandColor,
-                pointBackgroundColor: brandColor,
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: brandColor,
-                borderWidth: 2,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                r: {
-                    angleLines: { color: gridColor },
-                    grid: { color: gridColor },
-                    pointLabels: {
-                        color: textColor,
-                        font: { size: 10, weight: 'bold', family: 'Inter' }
-                    },
-                    ticks: {
-                        display: false, // hide the internal numbers (0..100) 
-                        min: 0,
-                        max: 100,
-                        stepSize: 25
-                    }
-                }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: isDark ? 'rgba(30,41,59,0.9)' : 'rgba(255,255,255,0.9)',
-                    titleColor: isDark ? '#fff' : '#000',
-                    bodyColor: isDark ? '#cbd5e1' : '#334155',
-                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                    borderWidth: 1,
-                    padding: 10,
-                    callbacks: { label: (ctx) => `Score: ${ctx.raw}/100` }
-                }
-            }
-        }
-    });
-}
 
 function _dashKpiSkeleton() {
     return Array(4).fill().map(() => `

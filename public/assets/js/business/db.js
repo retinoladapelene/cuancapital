@@ -351,7 +351,7 @@ window.bizRebuildSnapshots = bizRebuildSnapshots;
 
 // ── CreateSale Action ─────────────────────────────────────────────────────────
 // Orchestrates: sale + sale_items + stock update + inv_movements + fin_snapshot
-async function bizCreateSale({ businessId, cartItems, paymentMethod, notes, customerId, date }) {
+async function bizCreateSale({ businessId, cartItems, paymentMethod, notes, customerId, customerName, date }) {
     if (!cartItems || !cartItems.length) throw new Error('Keranjang kosong');
 
     const saleDate = date || bizToday();
@@ -396,6 +396,7 @@ async function bizCreateSale({ businessId, cartItems, paymentMethod, notes, cust
         id: saleId,
         business_id: businessId,
         customer_id: customerId || null,
+        customer_name: customerName || null,
         sale_date: saleDate,
         total_amount: totalAmount,
         total_cost: totalHpp,
@@ -448,6 +449,10 @@ async function bizCreateSale({ businessId, cartItems, paymentMethod, notes, cust
         payment_method: paymentMethod || 'cash',
         date: saleDate,
     }));
+
+    if (typeof bizClearIntelligenceCache === 'function') {
+        bizClearIntelligenceCache();
+    }
 
     return saleDOC;
 }

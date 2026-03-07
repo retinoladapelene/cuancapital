@@ -45,13 +45,20 @@
       </div>
     </div>
 
-    <!-- Payment method -->
-    <div class="biz-input-group" id="qs-pay-wrap" style="display:none">
-      <label class="biz-label">Metode Pembayaran</label>
-      <div class="biz-payment-chips">
-        <span class="biz-pay-chip active" data-pay="cash" onclick="qsSetPay(this,'cash')">💵 Cash</span>
-        <span class="biz-pay-chip" data-pay="transfer" onclick="qsSetPay(this,'transfer')">🏦 Transfer</span>
-        <span class="biz-pay-chip" data-pay="qris" onclick="qsSetPay(this,'qris')">📱 QRIS</span>
+    <!-- Payment method & Customer -->
+    <div id="qs-pay-wrap" style="display:none">
+      <div class="biz-input-group" style="margin-bottom:16px;">
+        <label class="biz-label" for="qs-customer-name">Nama Pelanggan (Opsional)</label>
+        <input type="text" id="qs-customer-name" class="biz-input" placeholder="e.g. Budi / Guest">
+      </div>
+
+      <div class="biz-input-group">
+        <label class="biz-label">Metode Pembayaran</label>
+        <div class="biz-payment-chips">
+          <span class="biz-pay-chip active" data-pay="cash" onclick="qsSetPay(this,'cash')"><i class="fas fa-money-bill-wave"></i> Cash</span>
+          <span class="biz-pay-chip" data-pay="transfer" onclick="qsSetPay(this,'transfer')"><i class="fas fa-building-columns"></i> Transfer</span>
+          <span class="biz-pay-chip" data-pay="qris" onclick="qsSetPay(this,'qris')"><i class="fas fa-qrcode"></i> QRIS</span>
+        </div>
       </div>
     </div>
 
@@ -117,13 +124,18 @@
         </div>
       </div>
 
-      <!-- Payment method -->
+      <!-- Customer & Payment method -->
+      <div class="biz-input-group" style="margin-bottom:16px;">
+        <label class="biz-label" for="pos-customer-name">Nama Pelanggan (Opsional)</label>
+        <input type="text" id="pos-customer-name" class="biz-input" placeholder="e.g. Siti / Guest">
+      </div>
+
       <div class="biz-input-group">
         <label class="biz-label">Metode Pembayaran</label>
         <div class="biz-payment-chips">
-          <span class="biz-pay-chip active" data-pay="cash" onclick="posSetPay(this,'cash')">💵 Cash</span>
-          <span class="biz-pay-chip" data-pay="transfer" onclick="posSetPay(this,'transfer')">🏦 Transfer</span>
-          <span class="biz-pay-chip" data-pay="qris" onclick="posSetPay(this,'qris')">📱 QRIS</span>
+          <span class="biz-pay-chip active" data-pay="cash" onclick="posSetPay(this,'cash')"><i class="fas fa-money-bill-wave"></i> Cash</span>
+          <span class="biz-pay-chip" data-pay="transfer" onclick="posSetPay(this,'transfer')"><i class="fas fa-building-columns"></i> Transfer</span>
+          <span class="biz-pay-chip" data-pay="qris" onclick="posSetPay(this,'qris')"><i class="fas fa-qrcode"></i> QRIS</span>
         </div>
       </div>
     </div> <!-- /pos-totals -->
@@ -154,6 +166,34 @@
     <div class="biz-input-group">
       <label class="biz-label" for="prod-name">Nama Produk *</label>
       <input id="prod-name" type="text" class="biz-input" placeholder="e.g. Bakso Frozen">
+    </div>
+
+    <!-- Image Upload -->
+    <div class="biz-input-group" style="display:flex; gap:16px; align-items:center;">
+        <div id="prod-image-preview" style="width:60px;height:60px;border-radius:12px;background:var(--biz-surface-2);border:1px dashed var(--biz-border);display:flex;align-items:center;justify-content:center;color:var(--biz-text-muted);overflow:hidden;flex-shrink:0;background-size:cover;background-position:center;">
+            <i class="fas fa-camera"></i>
+        </div>
+        <div style="flex:1">
+            <label class="biz-label" for="prod-image">Foto Produk (Opsional)</label>
+            <input id="prod-image" type="file" accept="image/*" class="biz-input" style="padding:8px" onchange="prodHandleImageUpload(this)">
+            <input type="hidden" id="prod-image-base64">
+        </div>
+    </div>
+
+    <div class="biz-input-group">
+      <label class="biz-label" for="prod-category">Kategori</label>
+      <select id="prod-category" class="biz-input">
+        <option value="">-- Pilih Kategori --</option>
+        <option value="Makanan">🍔 Makanan</option>
+        <option value="Minuman">🥤 Minuman</option>
+        <option value="Fashion">👗 Fashion</option>
+        <option value="Elektronik">💻 Elektronik</option>
+        <option value="Kecantikan">💄 Kecantikan</option>
+        <option value="Kesehatan">💊 Kesehatan</option>
+        <option value="Digital">📱 Digital / Online</option>
+        <option value="Jasa">🛠️ Jasa / Servis</option>
+        <option value="Lainnya">📦 Lainnya</option>
+      </select>
     </div>
 
     <div class="biz-row">
@@ -200,17 +240,49 @@
     </button>
 
     <div id="hpp-calc-panel" class="biz-detail-panel">
-      <div style="font-size:12px;font-weight:700;color:var(--biz-text-muted);margin-bottom:10px">Komponen HPP</div>
+      <!-- Section 1: Yield -->
+      <div style="margin-bottom:16px;">
+        <label class="biz-label" for="hpp-yield">Akan Menghasilkan Berapa Porsi/Unit? (Yield)</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <input id="hpp-yield" type="number" class="biz-input" value="1" min="1" oninput="hppCalcTotal()" style="flex:1">
+            <span style="font-size:12px;color:var(--biz-text-muted);width:60px">porsi</span>
+        </div>
+      </div>
+      
+      <!-- Section 2: Bahan Baku -->
+      <div style="font-size:12px;font-weight:700;color:var(--biz-text-muted);margin-bottom:10px;border-top:1px dashed var(--biz-border);padding-top:10px">Komponen Bahan Baku</div>
       <div id="hpp-ingredients-list"></div>
       <button class="biz-btn biz-btn-ghost biz-btn-sm" onclick="hppAddRow()" style="margin-top:8px">
-        <i class="fas fa-plus"></i> Tambah Komponen
+        <i class="fas fa-plus"></i> Tambah Bahan
       </button>
-      <div class="biz-hpp-total-row">
-        <span>Total HPP</span>
-        <span id="hpp-calc-total" style="color:var(--biz-warning)">Rp 0</span>
+
+      <!-- Section 3: Overhead -->
+      <div style="margin-top:16px;border-top:1px dashed var(--biz-border);padding-top:10px">
+        <label class="biz-label" for="hpp-overhead">Biaya Overhead / Non-Bahan (Per Porsi/Unit)</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-size:12px;color:var(--biz-text-muted)">Rp</span>
+            <input id="hpp-overhead" type="number" class="biz-input" placeholder="Misal: Biaya Kemasan/Staf" oninput="hppCalcTotal()" style="flex:1">
+        </div>
       </div>
-      <button class="biz-btn biz-btn-ghost biz-btn-sm" onclick="hppApplyToProduct()" style="width:100%;margin-top:8px">
-        <i class="fas fa-arrow-up"></i> Terapkan ke HPP Produk
+
+      <!-- Section 4: Summary -->
+      <div class="biz-hpp-total-wrapper" style="margin-top:20px;padding:12px;background:var(--biz-surface-2);border-radius:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--biz-text-muted);margin-bottom:6px">
+          <span>HPP Bahan (Total / Porsi)</span>
+          <span id="hpp-sub-bahan">Rp 0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--biz-text-muted);margin-bottom:10px">
+          <span>HPP Overhead (Per Porsi)</span>
+          <span id="hpp-sub-overhead">Rp 0</span>
+        </div>
+        <div class="biz-hpp-total-row" style="border-top:1px solid var(--biz-border);padding-top:8px;font-size:14px">
+          <span style="color:var(--biz-text)">Total Modal HPP / Porsi</span>
+          <span id="hpp-calc-total" style="color:var(--biz-warning);font-weight:800">Rp 0</span>
+        </div>
+      </div>
+      
+      <button class="biz-btn biz-btn-ghost biz-btn-sm" onclick="hppApplyToProduct()" style="width:100%;margin-top:12px">
+        <i class="fas fa-arrow-up"></i> Gunakan HPP Ini
       </button>
     </div>
 
