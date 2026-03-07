@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <!-- Business CSS -->
-    <link rel="stylesheet" href="{{ asset('assets/css/business-core.css') }}?v=1.8">
-    <link rel="stylesheet" href="{{ asset('assets/css/business-modules.css') }}?v=1.8">
+    <link rel="stylesheet" href="{{ asset('assets/css/business-core.css') }}?v=1.9">
+    <link rel="stylesheet" href="{{ asset('assets/css/business-modules.css') }}?v=1.9">
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0a0e1a">
@@ -585,16 +585,16 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Core modules (loaded in dependency order) -->
-<script src="{{ asset('assets/js/business/db.js') }}?v=1.8"          defer></script>
-<script src="{{ asset('assets/js/business/ui.js') }}?v=1.8"          defer></script>
-<script src="{{ asset('assets/js/business/backup.js') }}?v=1.8"      defer></script>
-<script src="{{ asset('assets/js/business/dashboard.js') }}?v=1.8"   defer></script>
-<script src="{{ asset('assets/js/business/sales.js') }}?v=1.8"       defer></script>
-<script src="{{ asset('assets/js/business/products.js') }}?v=1.8"    defer></script>
-<script src="{{ asset('assets/js/business/inventory.js') }}?v=1.8"   defer></script>
-<script src="{{ asset('assets/js/business/finance.js') }}?v=1.8"     defer></script>
-<script src="{{ asset('assets/js/business/reports.js') }}?v=1.8"     defer></script>
-<script src="{{ asset('assets/js/business/intelligence.js') }}?v=1.8" defer></script>
+<script src="{{ asset('assets/js/business/db.js') }}?v=1.9"          defer></script>
+<script src="{{ asset('assets/js/business/ui.js') }}?v=1.9"          defer></script>
+<script src="{{ asset('assets/js/business/backup.js') }}?v=1.9"      defer></script>
+<script src="{{ asset('assets/js/business/dashboard.js') }}?v=1.9"   defer></script>
+<script src="{{ asset('assets/js/business/sales.js') }}?v=1.9"       defer></script>
+<script src="{{ asset('assets/js/business/products.js') }}?v=1.9"    defer></script>
+<script src="{{ asset('assets/js/business/inventory.js') }}?v=1.9"   defer></script>
+<script src="{{ asset('assets/js/business/finance.js') }}?v=1.9"     defer></script>
+<script src="{{ asset('assets/js/business/reports.js') }}?v=1.9"     defer></script>
+<script src="{{ asset('assets/js/business/intelligence.js') }}?v=1.9" defer></script>
 
 <!-- Bootstrap -->
 <script defer>
